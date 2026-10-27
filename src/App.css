@@ -1499,3 +1499,764 @@
     font-size: 23px;
   }
 }
+
+/* ══════════════════════════════════════════
+   No-results state (search / filter)
+   ══════════════════════════════════════════ */
+
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 16px;
+  text-align: center;
+}
+
+.no-results-text.MuiTypography-root {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.no-results-btn.MuiButton-root {
+  color: var(--green);
+  font-size: 12px;
+  text-transform: none;
+}
+
+/* ══════════════════════════════════════════
+   Cart checkout button
+   ══════════════════════════════════════════ */
+
+.cart-checkout-btn.MuiButton-root {
+  min-height: 44px;
+  margin-top: 14px;
+  border-radius: 2px;
+  background: var(--green);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.cart-checkout-btn.MuiButton-root:hover {
+  background: var(--green-dark);
+}
+
+/* ══════════════════════════════════════════
+   Signup & Checkout form styles
+   ══════════════════════════════════════════ */
+
+/* Page wrapper — centers the form card on the page */
+.form-page {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 52px;
+}
+
+/* The white card that holds the form */
+.form-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 36px 32px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+/* Title styling — Georgia serif to match site branding */
+.form-title.MuiTypography-root {
+  margin-top: 8px;
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.5px;
+}
+
+/* Subtitle below the form title */
+.form-subtitle.MuiTypography-root {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Vertical stack of form fields */
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+  position: relative;
+}
+
+/* Two fields side-by-side (e.g., first name + last name) */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* Individual form field overrides */
+.form-field .MuiInputBase-root {
+  font-size: 13px;
+}
+
+.form-field .MuiInputLabel-root {
+  font-size: 13px;
+}
+
+.form-field .MuiFormHelperText-root {
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+/* Section divider inside a form (between shipping and payment) */
+.form-divider.MuiDivider-root {
+  margin: 8px 0;
+  border-color: var(--line);
+}
+
+/* Section titles within a form (e.g., "Shipping information") */
+.form-section-title.MuiTypography-root {
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+  margin-bottom: 4px;
+}
+
+/* reCAPTCHA container — centers the widget */
+.form-captcha {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+}
+
+/* Warning shown when CAPTCHA hasn't been solved on submit attempt */
+.captcha-warning.MuiAlert-root {
+  font-size: 12px;
+  padding: 4px 12px;
+}
+
+/* Submit button — matches the site's green CTA style */
+.form-submit-btn.MuiButton-root {
+  min-height: 46px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background: var(--green);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.form-submit-btn.MuiButton-root:hover {
+  background: var(--green-dark);
+}
+
+.form-submit-btn.MuiButton-root.Mui-disabled {
+  background: #c5cbbe;
+  color: #fff;
+}
+
+/* Footer text below the form (e.g., "Already have an account?") */
+.form-footer-text.MuiTypography-root {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Links inside form footer */
+.form-link {
+  color: var(--green);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.form-link:hover {
+  color: var(--green-dark);
+}
+
+/* Success state — shown after form submission */
+.form-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 52px 32px;
+}
+
+/* Green checkmark icon in success state */
+.success-icon.MuiSvgIcon-root {
+  width: 56px;
+  height: 56px;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+
+/* ══════════════════════════════════════════
+   Checkout page layout — form + order summary side by side
+   ══════════════════════════════════════════ */
+
+.checkout-page {
+  padding: 10px 0 52px;
+}
+
+/* Grid layout: form on the left, summary on the right */
+.checkout-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 32px;
+  align-items: start;
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+/* Order summary sidebar */
+.checkout-summary {
+  position: sticky;
+  top: 20px;
+  padding: 22px 20px;
+  border: 1px solid var(--line);
+  background: #fafaf7;
+}
+
+.summary-title.MuiTypography-root {
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 18px;
+  font-weight: 400;
+  margin-bottom: 16px;
+}
+
+/* List of items in the order summary */
+.summary-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Individual item row in summary */
+.summary-item {
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.summary-item-image {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 3px;
+  background: var(--cream);
+}
+
+.summary-item-name.MuiTypography-root {
+  font-size: 12px;
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.summary-item-qty.MuiTypography-root {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.summary-item-price.MuiTypography-root {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.summary-divider.MuiDivider-root {
+  margin: 14px 0;
+  border-color: var(--line);
+}
+
+/* Line items in the total breakdown (subtotal, tax, shipping) */
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  color: #666a60;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+/* The total line — bolder and darker */
+.summary-total {
+  color: var(--ink);
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+/* ══════════════════════════════════════════
+   Header — Auth state UI
+   ══════════════════════════════════════════ */
+
+/* Container for "Hi, Name" + logout button in the header */
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* "Hi, Name" button — clickable, links to account/checkout */
+.header-user-name.MuiButton-root {
+  min-width: 0;
+  padding: 4px 10px;
+  border-radius: 16px;
+  background: #f2f3ed;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.header-user-name.MuiButton-root:hover {
+  background: #e8eae2;
+}
+
+/* Highlighted nav link (Sign up button) */
+.nav-link-highlight.MuiButton-root {
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════════
+   Checkout — Greeting & Address features
+   ══════════════════════════════════════════ */
+
+/* "Ordering as Name (email)" line below checkout title */
+.checkout-greeting.MuiTypography-root {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.checkout-greeting strong {
+  color: var(--ink);
+}
+
+/* Row of action buttons above the address form (geolocation, new address) */
+.address-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* "Use my location" / "Enter new address" buttons */
+.geo-detect-btn.MuiButton-root {
+  border-color: #dfe1d9;
+  border-radius: 20px;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: none;
+}
+
+.geo-detect-btn.MuiButton-root:hover {
+  border-color: var(--green);
+  background: #f6f7f3;
+}
+
+/* Geolocation error alert */
+.geo-error.MuiAlert-root {
+  font-size: 11px;
+  padding: 6px 12px;
+}
+
+.geo-coordinates.MuiTypography-root {
+  color: #777a70;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Saved addresses ── */
+.saved-addresses {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.saved-addresses-label.MuiTypography-root {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Individual saved address card — clickable to select */
+.saved-address-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.saved-address-card:hover {
+  border-color: #c5cbbe;
+  background: #fafaf7;
+}
+
+/* Active/selected saved address — green border */
+.saved-address-active {
+  border-color: var(--green);
+  background: #f6f7f3;
+}
+
+.saved-address-text {
+  min-width: 0;
+}
+
+.saved-address-line.MuiTypography-root {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.saved-address-detail.MuiTypography-root {
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.saved-address-delete.MuiIconButton-root {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.saved-address-delete.MuiIconButton-root:hover {
+  color: #9b6154;
+}
+
+/* ══════════════════════════════════════════
+   Cart — Auth notice
+   ══════════════════════════════════════════ */
+
+.cart-auth-notice.MuiAlert-root {
+  margin-top: 10px;
+  font-size: 11px;
+  padding: 6px 12px;
+}
+
+/* ══════════════════════════════════════════
+   Login form — redirect notice + error
+   ══════════════════════════════════════════ */
+
+.login-redirect-notice.MuiAlert-root {
+  margin-top: 16px;
+  font-size: 12px;
+}
+
+.login-error.MuiAlert-root {
+  font-size: 12px;
+}
+
+/* ══════════════════════════════════════════
+   404 — Not Found page
+   ══════════════════════════════════════════ */
+
+.not-found-page {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 60px;
+}
+
+.not-found-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 480px;
+  padding: 40px 32px;
+}
+
+/* Icon wrapper — circular green background */
+.not-found-icon-wrap {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f2f3ed;
+  margin-bottom: 16px;
+}
+
+.not-found-icon.MuiSvgIcon-root {
+  width: 34px;
+  height: 34px;
+  color: var(--green);
+}
+
+/* Large "404" number */
+.not-found-code.MuiTypography-root {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 80px;
+  font-weight: 400;
+  letter-spacing: -3px;
+  line-height: 1;
+  color: var(--line);
+  margin-bottom: 4px;
+}
+
+/* "Page not found" heading */
+.not-found-title.MuiTypography-root {
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.5px;
+}
+
+/* Description text */
+.not-found-description.MuiTypography-root {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Action buttons row */
+.not-found-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.not-found-home-btn.MuiButton-root {
+  min-height: 42px;
+  padding: 0 24px;
+  border-radius: 2px;
+  background: var(--green);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.not-found-home-btn.MuiButton-root:hover {
+  background: var(--green-dark);
+}
+
+.not-found-browse-btn.MuiButton-root {
+  min-height: 42px;
+  padding: 0 24px;
+  border-radius: 2px;
+  border-color: #dfe1d9;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.not-found-browse-btn.MuiButton-root:hover {
+  border-color: var(--green);
+  background: #f6f7f3;
+}
+
+/* ── Responsive: stack checkout + 404 on small screens ── */
+@media (max-width: 768px) {
+  .checkout-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-summary {
+    position: static;
+    order: -1;
+  }
+
+  .form-card {
+    padding: 28px 20px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .not-found-code.MuiTypography-root {
+    font-size: 60px;
+  }
+
+  .not-found-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .not-found-home-btn.MuiButton-root,
+  .not-found-browse-btn.MuiButton-root {
+    width: 100%;
+  }
+
+  /* Stack header user controls tighter on mobile */
+  .header-user-name.MuiButton-root {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .about-hero {
+    padding: 32px 20px;
+  }
+
+  .about-hero-title.MuiTypography-root {
+    font-size: 32px;
+  }
+
+  .about-values {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .about-mission {
+    padding: 28px 20px;
+  }
+
+  .about-mission-quote.MuiTypography-root {
+    font-size: 20px;
+  }
+}
+
+/* ══════════════════════════════════════════
+   About page
+   ══════════════════════════════════════════ */
+
+.about-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 10px 0 60px;
+}
+
+/* ── Hero section ── */
+.about-hero {
+  text-align: center;
+  padding: 40px 16px 48px;
+}
+
+.about-hero-title.MuiTypography-root {
+  margin-top: 12px;
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 42px;
+  font-weight: 400;
+  letter-spacing: -1.2px;
+}
+
+.about-hero-text.MuiTypography-root {
+  max-width: 540px;
+  margin: 16px auto 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+/* ── Values grid ── */
+.about-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 0 16px;
+}
+
+.about-value-card {
+  padding: 28px 24px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.about-value-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f2f3ed;
+  color: var(--green);
+  margin-bottom: 14px;
+}
+
+.about-value-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.about-value-title.MuiTypography-root {
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+}
+
+.about-value-text.MuiTypography-root {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* ── Mission quote ── */
+.about-mission {
+  margin: 48px 0;
+  padding: 40px 32px;
+  background: var(--cream);
+  text-align: center;
+}
+
+.about-mission-quote.MuiTypography-root {
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 24px;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.4px;
+  line-height: 1.5;
+}
+
+.about-mission-attribution.MuiTypography-root {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* ── CTA section ── */
+.about-cta {
+  text-align: center;
+  padding: 0 16px 20px;
+}
+
+.about-cta-text.MuiTypography-root {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+
+.about-cta-btn.MuiButton-root {
+  min-height: 46px;
+  padding: 0 32px;
+  border-radius: 2px;
+  background: var(--green);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.about-cta-btn.MuiButton-root:hover {
+  background: var(--green-dark);
+}

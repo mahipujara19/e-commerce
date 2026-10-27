@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Card,
   CardContent,
@@ -12,13 +13,23 @@ import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded'
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { changeQuantity, removeItem } from '../toolkit/slice'
 
+/**
+ * Cartlist — Full-page cart review.
+ *
+ * The "Proceed to checkout" button adapts based on auth state:
+ * - Logged in → goes straight to /checkout
+ * - Not logged in → goes to /login with return path to /checkout
+ * This enforces the flow: Browse → Cart → Login/Signup → Checkout
+ */
 function Cartlist() {
   const cartItems = useSelector((state) => state.cart.items)
   const dispatch = useDispatch()
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
 
   if (cartItems.length === 0) {
     return (
@@ -124,6 +135,7 @@ function Cartlist() {
         ))}
       </Stack>
 
+      {/* Order summary with subtotal and action buttons */}
       <div className="cart-list-summary">
         <div className="cart-list-subtotal">
           <Typography>Subtotal</Typography>
@@ -132,6 +144,26 @@ function Cartlist() {
         <Typography className="cart-list-shipping-note">
           Shipping and taxes are calculated at checkout.
         </Typography>
+        {/*
+         * Checkout button — adapts based on auth state:
+         * - Logged in → /checkout directly
+         * - Not logged in → /login with redirect back to /checkout after auth
+         */}
+        {!isAuthenticated && (
+          <Alert severity="info" className="cart-auth-notice" icon={<LockOutlinedIcon fontSize="small" />}>
+            Please sign in or create an account to checkout.
+          </Alert>
+        )}
+        <Button
+          component={Link}
+          to={isAuthenticated ? '/checkout' : '/login'}
+          state={!isAuthenticated ? { from: '/checkout' } : undefined}
+          variant="contained"
+          fullWidth
+          className="cart-checkout-btn"
+        >
+          {isAuthenticated ? 'Proceed to checkout' : 'Sign in to checkout'}
+        </Button>
         <Button
           component={Link}
           to="/"
