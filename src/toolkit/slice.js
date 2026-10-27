@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
 
 const initialState={
-    items:localStorage.getItem('cart')?JSON.parse(localStorage.getItem('cart')):0
+    items:localStorage.getItem('cart')?JSON.parse(localStorage.getItem('cart')):[]
 }
 
 const addtocart=createSlice({
@@ -9,10 +9,29 @@ const addtocart=createSlice({
     initialState,
     reducers:{
         addItem:(state,action)=>{
-          //  state.value+=1;
-          console.log(action);
-          state.items.push(action.payload)
+          const quantityToAdd = Math.max(1, Number(action.payload.quantity) || 1)
+          const existingItem = state.items.find((item)=>item.id===action.payload.id)
+          if (existingItem) {
+            existingItem.quantity = (existingItem.quantity ?? 1) + quantityToAdd
+          } else {
+            state.items.push({...action.payload, quantity:quantityToAdd})
+          }
           localStorage.setItem('cart',JSON.stringify(state.items))
+        },
+        changeQuantity:(state,action)=>{
+            const { id, change } = action.payload
+            const item = state.items.find((cartItem)=>cartItem.id===id)
+
+            if (!item) return
+
+            const nextQuantity = (item.quantity ?? 1) + change
+            if (nextQuantity <= 0) {
+                state.items = state.items.filter((cartItem)=>cartItem.id!==id)
+            } else {
+                item.quantity = nextQuantity
+            }
+
+            localStorage.setItem('cart',JSON.stringify(state.items))
         },
         removeItem:(state,action)=>{
             const cartdata=state.items.filter((item)=>item.id!==action.payload.id)
@@ -20,10 +39,11 @@ const addtocart=createSlice({
             localStorage.setItem('cart',JSON.stringify(cartdata))
         },
         clearItem:(state)=>{
-            state.value=0
+            state.items=[]
+            localStorage.setItem('cart',JSON.stringify(state.items))
         }
     }
 })
 
-export const {addItem,removeItem,clearItem}=addtocart.actions
+export const {addItem,changeQuantity,removeItem,clearItem}=addtocart.actions
 export default addtocart.reducer

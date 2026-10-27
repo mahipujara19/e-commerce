@@ -12,9 +12,11 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded'
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import { useSelector } from 'react-redux'
+import { Link } from 'react-router-dom'
 
 function Header() {
-  const valofcart = useSelector((state) => state.cart.items)
+  const cartItems = useSelector((state) => state.cart.items)
+  const itemCount = cartItems.reduce((total, item) => total + (item.quantity ?? 1), 0)
   return (
     <>
       <div className="announcement-bar">
@@ -28,10 +30,10 @@ function Header() {
           </Typography>
 
           <Box component="nav" className="main-navigation" aria-label="Main navigation">
-            <Button href="#collection" className="nav-link">Shop all</Button>
-            <Button href="#collection" className="nav-link">Home</Button>
-            <Button href="#collection" className="nav-link">Body &amp; bath</Button>
-            <Button href="#collection" className="nav-link">Our story</Button>
+            <Button  component={Link} to="#collection" className="nav-link">Shop all</Button>
+            <Button component={Link} to="/" className="nav-link">Home</Button>
+            <Button component={Link} to="#collection" className="nav-link">Body &amp; bath</Button>
+            <Button component={Link} to="#collection" className="nav-link">Our story</Button>
           </Box>
 
           <div className="header-actions">
@@ -43,10 +45,12 @@ function Header() {
               <PersonOutlineRoundedIcon />
             </IconButton>
             <IconButton
-              aria-label={`Shopping bag with ${valofcart.length} items`}
+              component={Link}
+              to="/cart"
+              aria-label={`Shopping bag with ${itemCount} items`}
               className="header-icon"
             >
-              <Badge badgeContent={valofcart.length?valofcart.length:0} color="primary" showZero>
+              <Badge badgeContent={itemCount} color="primary" showZero>
                 <ShoppingBagOutlinedIcon />
               </Badge>
             </IconButton>

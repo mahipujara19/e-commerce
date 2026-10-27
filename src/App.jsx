@@ -2,10 +2,15 @@ import Header from './components/header.jsx'
 import Product from './components/Product'
 import Addtocart from './components/Addtocart'
 import './App.css'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import Cartlist from './components/Cartlist.jsx'
+import ProductItem from './components/ProductItem.jsx'
 
 function App() {
   return (
+
     <div className="storefront">
+      <BrowserRouter>
       <Header />
 
       <main className="page-content">
@@ -25,16 +30,26 @@ function App() {
           <span className="banner-note">MADE TO BE KEPT</span>
         </section>
 
-        <div className="shop-layout">
-          <Product />
-          <Addtocart />
-        </div>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <div className="shop-layout">
+                <Product />
+                <Addtocart />
+              </div>
+            }
+          />
+          <Route path="/cart" element={<Cartlist />} />
+          <Route path="/productitem/:id" element={<ProductItem />} />
+        </Routes>
       </main>
 
       <footer className="store-footer">
         <span>Made for the everyday.</span>
         <span>Free shipping on orders over $75</span>
       </footer>
+      </BrowserRouter>
     </div>
   )
 }

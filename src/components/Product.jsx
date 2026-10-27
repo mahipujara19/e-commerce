@@ -1,6 +1,7 @@
 import {
   Button,
   Card,
+  CardActionArea,
   CardContent,
   CardMedia,
   Chip,
@@ -13,6 +14,7 @@ import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded
 import AddShoppingCartRoundedIcon from '@mui/icons-material/AddShoppingCartRounded'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import { useDispatch, useSelector } from 'react-redux'
+import { Link } from 'react-router-dom'
 import { addItem, removeItem } from '../toolkit/slice'
 import {fetchproduct} from '../toolkit/productslice'
 function Product() {
@@ -54,12 +56,19 @@ function Product() {
         {products.map((product) => (
           <Card className="product-card" elevation={0} key={product.id}>
             <div className={`product-image-wrap product-image-${product.color}`}>
-              <CardMedia
-                component="img"
-                image={product.thumbnail}
-                alt={product.title}
-                className="product-image"
-              />
+              <CardActionArea
+                component={Link}
+                to={`/productitem/${product.id}`}
+                aria-label={`View ${product.title}`}
+                className="product-card-link"
+              >
+                <CardMedia
+                  component="img"
+                  image={product.thumbnail}
+                  alt={product.title}
+                  className="product-image"
+                />
+              </CardActionArea>
               {product.label && (
                 <Chip label={product.label} size="small" className="product-label" />
               )}
@@ -68,21 +77,27 @@ function Product() {
               </IconButton>
             </div>
             <CardContent className="product-card-content">
-              <Typography component="p" className="product-category">
-                {product.category}
-              </Typography>
-              <div className="product-name-price">
-                <Typography component="h3" className="product-name">
-                  {product.title}
+              <CardActionArea
+                component={Link}
+                to={`/productitem/${product.id}`}
+                className="product-info-link"
+              >
+                <Typography component="p" className="product-category">
+                  {product.category}
                 </Typography>
-                <span className="product-price">${product.price.toFixed(2)}</span>
-              </div>
-              <div className="product-rating">
-                <Rating value={product.rating} precision={0.1} readOnly size="small" />
-                <span>{product.rating} ({product.reviews.length})</span>
-              </div>
+                <div className="product-name-price">
+                  <Typography component="h3" className="product-name">
+                    {product.title}
+                  </Typography>
+                  <span className="product-price">${product.price.toFixed(2)}</span>
+                </div>
+                <div className="product-rating">
+                  <Rating value={product.rating} precision={0.1} readOnly size="small" />
+                  <span>{product.rating} ({product.reviews.length})</span>
+                </div>
+              </CardActionArea>
 
-              {
+              {/* {
                 cartitemselector.find((cartitem)=>cartitem.id === product.id)?
                 <Button
                   onClick={() => dispatch(removeItem(product))}
@@ -103,7 +118,7 @@ function Product() {
                 >
                   Add to bag
                 </Button>
-              }
+              } */}
               {/* <Button
                 onClick={() => dispatch(addItem(product))}
                 variant="outlined"
