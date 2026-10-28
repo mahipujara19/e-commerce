@@ -31,12 +31,12 @@ function ProductCard({ product }) {
             src={product.thumbnail}
             alt={product.title}
             loading="lazy"
-            className="h-full w-full object-contain p-8 transition-transform duration-700 ease-out group-hover:scale-105"
+            className="h-full w-full object-contain p-5 transition-transform duration-700 ease-out group-hover:scale-105 sm:p-8"
           />
         </Link>
 
         {discount >= 10 && (
-          <span className="absolute left-3 top-3 bg-ink px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-ivory">
+          <span className="absolute left-2.5 top-2.5 bg-ink sm:left-3 sm:top-3 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-ivory">
             −{discount}%
           </span>
         )}
@@ -46,7 +46,7 @@ function ProductCard({ product }) {
           onClick={() => setLiked((value) => !value)}
           aria-pressed={liked}
           aria-label={`${liked ? 'Remove' : 'Save'} ${product.title} ${liked ? 'from' : 'to'} wishlist`}
-          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-surface/90 text-ink shadow-sm transition hover:bg-surface"
+          className="absolute right-2.5 top-2.5 grid h-9 w-9 place-items-center rounded-full bg-surface/90 text-ink shadow-sm transition hover:bg-surface sm:right-3 sm:top-3"
         >
           {liked ? (
             <FavoriteRoundedIcon sx={{ fontSize: 18 }} className="text-gold" />
@@ -59,28 +59,31 @@ function ProductCard({ product }) {
           type="button"
           onClick={handleQuickAdd}
           disabled={soldOut}
-          className="absolute inset-x-3 bottom-3 flex items-center justify-center gap-2 bg-ink py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-ivory transition-all duration-300 hover:bg-gold focus-visible:translate-y-0 focus-visible:opacity-100 disabled:bg-stone lg:translate-y-3 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100"
+          aria-label={soldOut ? `${product.title} is sold out` : `Add ${product.title} to bag`}
+          className="absolute bottom-2.5 right-2.5 grid h-10 w-10 place-items-center rounded-full bg-ink text-ivory shadow-lg transition-all duration-300 hover:bg-gold disabled:bg-stone sm:bottom-3 sm:right-3 lg:inset-x-3 lg:bottom-3 lg:flex lg:h-auto lg:w-auto lg:translate-y-3 lg:items-center lg:justify-center lg:gap-2 lg:rounded-none lg:py-3 lg:opacity-0 lg:shadow-none lg:focus-visible:translate-y-0 lg:focus-visible:opacity-100 lg:group-hover:translate-y-0 lg:group-hover:opacity-100"
         >
-          <ShoppingBagOutlinedIcon sx={{ fontSize: 16 }} />
-          {soldOut ? 'Sold out' : 'Add to bag'}
+          <ShoppingBagOutlinedIcon sx={{ fontSize: 17 }} />
+          <span className="hidden text-[11px] font-semibold uppercase tracking-[0.16em] lg:inline">
+            {soldOut ? 'Sold out' : 'Add to bag'}
+          </span>
         </button>
       </div>
 
-      <div className="mt-4 flex flex-1 flex-col">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-stone">
+      <div className="mt-3 flex flex-1 flex-col sm:mt-4">
+        <p className="truncate text-[10px] uppercase tracking-[0.16em] text-stone sm:text-[11px] sm:tracking-[0.18em]">
           {product.brand || formatCategory(product.category)}
         </p>
-        <Link to={productUrl} className="mt-1.5 line-clamp-2 font-display text-[17px] leading-snug transition-colors hover:text-gold">
+        <Link to={productUrl} className="mt-1 line-clamp-2 font-display text-[15px] leading-snug transition-colors hover:text-gold sm:mt-1.5 sm:text-[17px]">
           {product.title}
         </Link>
         <div className="mt-2 flex items-center gap-1.5">
           <Rating value={product.rating} precision={0.5} readOnly size="small" sx={{ fontSize: 15 }} />
           <span className="text-xs text-stone">({product.reviews?.length ?? 0})</span>
         </div>
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-[15px] font-semibold">{money(product.price)}</span>
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
+          <span className="text-sm font-semibold sm:text-[15px]">{money(product.price)}</span>
           {original && discount >= 10 && (
-            <span className="text-sm text-stone line-through">{money(original)}</span>
+            <span className="text-xs text-stone line-through sm:text-sm">{money(original)}</span>
           )}
         </div>
       </div>

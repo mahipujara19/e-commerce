@@ -1,19 +1,22 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { Drawer } from '@mui/material'
 import Header from './components/header.jsx'
 import Footer from './components/Footer.jsx'
-import Home from './components/Home.jsx'
-import Addtocart from './components/Addtocart.jsx'
-import Cartlist from './components/Cartlist.jsx'
-import ProductItem from './components/ProductItem.jsx'
-import SignupForm from './components/SignupForm.jsx'
-import LoginForm from './components/LoginForm.jsx'
-import CheckoutForm from './components/CheckoutForm.jsx'
-import NotFound from './components/NotFound.jsx'
-import About from './components/About.jsx'
+import PageLoader from './components/PageLoader.jsx'
 import { fetchproduct } from './toolkit/productslice'
+
+// Each route (and the cart drawer contents) is its own chunk, downloaded on first visit.
+const Home = lazy(() => import('./components/Home.jsx'))
+const Addtocart = lazy(() => import('./components/Addtocart.jsx'))
+const Cartlist = lazy(() => import('./components/Cartlist.jsx'))
+const ProductItem = lazy(() => import('./components/ProductItem.jsx'))
+const SignupForm = lazy(() => import('./components/SignupForm.jsx'))
+const LoginForm = lazy(() => import('./components/LoginForm.jsx'))
+const CheckoutForm = lazy(() => import('./components/CheckoutForm.jsx'))
+const NotFound = lazy(() => import('./components/NotFound.jsx'))
+const About = lazy(() => import('./components/About.jsx'))
 import { closeCart } from './toolkit/uiSlice'
 
 function ScrollToTop() {
@@ -33,7 +36,9 @@ function CartDrawer() {
 
   return (
     <Drawer anchor="right" open={open} onClose={close} slotProps={{ paper: { sx: { width: { xs: '100%', sm: 440 } } } }}>
-      <Addtocart onClose={close} />
+      <Suspense fallback={<PageLoader className="h-full" />}>
+        <Addtocart onClose={close} />
+      </Suspense>
     </Drawer>
   )
 }
@@ -51,16 +56,18 @@ function App() {
       <div className="flex min-h-screen flex-col">
         <Header />
         <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/cart" element={<Cartlist />} />
-            <Route path="/productitem/:id" element={<ProductItem />} />
-            <Route path="/signup" element={<SignupForm />} />
-            <Route path="/login" element={<LoginForm />} />
-            <Route path="/checkout" element={<CheckoutForm />} />
-            <Route path="/about" element={<About />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/cart" element={<Cartlist />} />
+              <Route path="/productitem/:id" element={<ProductItem />} />
+              <Route path="/signup" element={<SignupForm />} />
+              <Route path="/login" element={<LoginForm />} />
+              <Route path="/checkout" element={<CheckoutForm />} />
+              <Route path="/about" element={<About />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </main>
         <Footer />
       </div>

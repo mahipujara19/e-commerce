@@ -105,38 +105,40 @@ function Home() {
       {/* Hero */}
       <section className="relative overflow-hidden bg-sand">
         <div className="pointer-events-none absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-surface/50 blur-3xl" />
-        <div className="container-x relative grid items-center gap-12 py-16 md:py-20 lg:min-h-[min(calc(100svh-7.5rem),780px)] lg:grid-cols-[1.05fr_1fr] lg:py-12">
+        <div className="container-x relative grid items-center gap-14 py-12 sm:py-16 md:grid-cols-[1.1fr_1fr] md:gap-8 md:py-20 lg:min-h-[min(calc(100svh-7.5rem),780px)] lg:grid-cols-[1.05fr_1fr] lg:gap-12 lg:py-12">
           <div className="max-w-xl animate-fade-up">
             <p className="eyebrow">New season · The autumn edit</p>
-            <h1 className="mt-6 font-display text-[46px] leading-[1.02] tracking-tight sm:text-6xl xl:text-[84px]">
+            <h1 className="mt-5 font-display text-[42px] leading-[1.03] tracking-tight sm:mt-6 sm:text-6xl md:text-[54px] lg:text-7xl xl:text-[84px]">
               Objects of <em className="text-gold">quiet</em> luxury.
             </h1>
-            <p className="mt-7 max-w-md text-base leading-relaxed text-stone md:text-lg">
+            <p className="mt-6 max-w-md text-[15px] leading-relaxed text-stone sm:mt-7 sm:text-base lg:text-lg">
               Fine jewellery, refined timepieces and signature fragrance — curated for those who buy less, but better.
             </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <a href="#shop" className="btn-primary">
+            <div className="mt-9 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:gap-4 md:max-w-xs md:flex-col md:gap-3 lg:max-w-none lg:flex-row lg:gap-4">
+              <a href="#shop" className="btn-primary w-full sm:w-auto md:w-full lg:w-auto">
                 Shop the collection <ArrowForwardRoundedIcon sx={{ fontSize: 18 }} />
               </a>
-              <Link to="/about" className="btn-outline">
+              <Link to="/about" className="btn-outline w-full sm:w-auto md:w-full lg:w-auto">
                 Our story
               </Link>
             </div>
-            <dl className="mt-14 grid max-w-md grid-cols-3 gap-6 border-t border-ink/10 pt-8">
+            <dl className="mt-10 grid max-w-md grid-cols-3 gap-4 border-t border-ink/10 pt-7 sm:mt-14 sm:gap-6 sm:pt-8">
               {[
-                { value: products.length ? `${products.length}+` : '190+', label: 'Curated pieces' },
-                { value: categoryCount || '20+', label: 'Categories' },
+                { value: products.length ? `${products.length}+` : '80+', label: 'Pieces' },
+                { value: categoryCount || '15', label: 'Categories' },
                 { value: '30', label: 'Day returns' },
               ].map((stat) => (
-                <div key={stat.label} className="flex flex-col-reverse">
-                  <dt className="mt-1 text-[11px] uppercase tracking-[0.16em] text-stone">{stat.label}</dt>
-                  <dd className="font-display text-3xl md:text-4xl">{stat.value}</dd>
+                <div key={stat.label} className="flex flex-col">
+                  <dt className="mt-1 whitespace-nowrap text-[10px] uppercase tracking-[0.14em] text-stone sm:text-[11px] sm:tracking-[0.16em]">
+                    {stat.label}
+                  </dt>
+                  <dd className="order-first font-display text-3xl md:text-4xl">{stat.value}</dd>
                 </div>
               ))}
             </dl>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[560px] animate-fade-in">
+          <div className="relative mx-auto mb-8 w-full max-w-[340px] animate-fade-in sm:max-w-[440px] md:mb-0 md:max-w-[560px]">
             <div className="absolute inset-[5%] rounded-full bg-gradient-to-br from-surface to-gold-soft" />
             <div className="absolute inset-0 rounded-full border border-ink/10" />
             <div className="relative z-10 aspect-square w-full animate-float motion-reduce:animate-none">
@@ -156,14 +158,14 @@ function Home() {
               <Link
                 key={heroProduct.id}
                 to={`/productitem/${heroProduct.id}`}
-                className="absolute bottom-4 left-0 z-20 flex animate-fade-in items-center gap-4 bg-surface/95 p-3 pr-5 shadow-xl backdrop-blur transition hover:-translate-y-0.5 sm:-left-4 sm:bottom-10"
+                className="absolute -left-2 bottom-2 z-20 flex animate-fade-in items-center gap-3 bg-surface/95 p-2.5 pr-4 shadow-xl backdrop-blur transition hover:-translate-y-0.5 sm:-left-4 sm:bottom-10 sm:gap-4 sm:p-3 sm:pr-5"
               >
-                <img src={heroProduct.thumbnail} alt="" className="h-14 w-14 bg-sand object-contain p-1" />
+                <img src={heroProduct.thumbnail} alt="" className="h-12 w-12 bg-sand object-contain p-1 sm:h-14 sm:w-14" />
                 <span>
                   <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-gold">
                     {formatCategory(heroProduct.category)}
                   </span>
-                  <span className="block max-w-[180px] truncate font-display text-base">{heroProduct.title}</span>
+                  <span className="block max-w-[150px] truncate font-display text-[15px] sm:max-w-[180px] sm:text-base">{heroProduct.title}</span>
                   <span className="block text-sm font-semibold">{money(heroProduct.price)}</span>
                 </span>
                 <ArrowForwardRoundedIcon sx={{ fontSize: 18 }} />
@@ -188,11 +190,11 @@ function Home() {
       </section>
 
       {/* Marquee */}
-      <div className="overflow-hidden border-b border-line bg-ivory py-6" aria-hidden="true">
+      <div className="overflow-hidden border-b border-line bg-ivory py-4 md:py-6" aria-hidden="true">
         <div className="flex w-max animate-marquee whitespace-nowrap motion-reduce:animate-none">
           {[...MARQUEE, ...MARQUEE].map((word, index) => (
-            <span key={index} className="flex items-center font-display text-2xl italic text-ink/70 md:text-3xl">
-              <span className="px-8">{word}</span>
+            <span key={index} className="flex items-center font-display text-xl italic text-ink/70 md:text-3xl">
+              <span className="px-6 md:px-8">{word}</span>
               <span className="text-base not-italic text-gold">✦</span>
             </span>
           ))}
@@ -201,15 +203,18 @@ function Home() {
 
       {/* Perks */}
       <section aria-label="Why shop with us" className="border-b border-line">
-        <div className="container-x grid sm:grid-cols-2 lg:grid-cols-4">
+        <div className="container-x grid grid-cols-2 lg:grid-cols-4">
           {PERKS.map(({ icon: Icon, title, text }) => (
-            <div key={title} className="flex items-center gap-4 py-7 sm:px-6 sm:first:pl-0 lg:border-l lg:first:border-l-0">
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-line text-gold">
-                <Icon sx={{ fontSize: 22 }} />
+            <div
+              key={title}
+              className="flex flex-col items-start gap-3 border-line px-3 py-6 odd:border-r sm:flex-row sm:items-center sm:gap-4 sm:px-6 lg:border-r lg:py-8 lg:first:pl-0 lg:last:border-r-0 [&:nth-child(-n+2)]:border-b lg:[&:nth-child(-n+2)]:border-b-0"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line text-gold sm:h-12 sm:w-12">
+                <Icon sx={{ fontSize: 20 }} />
               </span>
               <div>
-                <p className="text-sm font-semibold">{title}</p>
-                <p className="mt-0.5 text-sm text-stone">{text}</p>
+                <p className="text-[13px] font-semibold sm:text-sm">{title}</p>
+                <p className="mt-0.5 text-xs leading-snug text-stone sm:text-sm">{text}</p>
               </div>
             </div>
           ))}
@@ -217,7 +222,7 @@ function Home() {
       </section>
 
       {/* Categories */}
-      <section className="py-20 md:py-28" aria-labelledby="categories-title">
+      <section className="py-14 md:py-20 lg:py-28" aria-labelledby="categories-title">
         <div className="container-x">
           <SectionHeading
             id="categories-title"
@@ -229,14 +234,14 @@ function Home() {
               </a>
             }
           />
-          <div className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6 lg:gap-5">
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 md:mt-12 md:grid-cols-3 lg:grid-cols-6 lg:gap-5">
             {loading
               ? Array.from({ length: 6 }, (_, index) => (
-                  <div key={index} className="aspect-[3/4] animate-pulse bg-sand" />
+                  <div key={index} className="aspect-square animate-pulse bg-sand lg:aspect-[3/4]" />
                 ))
               : categories.map((category) => (
                   <button key={category.name} type="button" onClick={() => handleCategory(category.name)} className="group text-left">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-surface ring-1 ring-line">
+                    <div className="relative aspect-square overflow-hidden bg-surface ring-1 ring-line lg:aspect-[3/4]">
                       <img
                         src={category.image}
                         alt=""
@@ -244,7 +249,7 @@ function Home() {
                         className="h-full w-full object-contain p-6 transition duration-700 group-hover:scale-110"
                       />
                     </div>
-                    <p className="mt-4 font-display text-lg transition-colors group-hover:text-gold">
+                    <p className="mt-3 font-display text-base transition-colors group-hover:text-gold sm:mt-4 sm:text-lg">
                       {formatCategory(category.name)}
                     </p>
                     <p className="mt-0.5 text-[11px] uppercase tracking-[0.18em] text-stone">{category.count} pieces</p>
@@ -255,7 +260,7 @@ function Home() {
       </section>
 
       {/* Bestsellers */}
-      <section className="bg-surface py-20 md:py-28" aria-labelledby="bestsellers-title">
+      <section className="bg-surface py-14 md:py-20 lg:py-28" aria-labelledby="bestsellers-title">
         <div className="container-x">
           <SectionHeading
             id="bestsellers-title"
@@ -263,7 +268,7 @@ function Home() {
             title="Bestsellers"
             description="The pieces our clients return to again and again."
           />
-          <div className="mt-12 grid grid-cols-2 gap-x-5 gap-y-12 lg:grid-cols-4">
+          <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-5 md:mt-12 md:grid-cols-4">
             {loading
               ? Array.from({ length: 4 }, (_, index) => <ProductCardSkeleton key={index} />)
               : bestsellers.map((product) => <ProductCard key={product.id} product={product} />)}
@@ -274,18 +279,18 @@ function Home() {
       {/* Sale banner */}
       {saleProduct && (
         <section className="bg-night text-cream" aria-labelledby="sale-title">
-          <div className="container-x grid items-center gap-14 py-20 md:py-28 lg:grid-cols-2">
+          <div className="container-x grid items-center gap-12 py-16 md:grid-cols-2 md:gap-10 md:py-20 lg:gap-14 lg:py-28">
             <div className="relative">
               <div className="aspect-[4/3] bg-[#efe9df]">
                 <img
                   src={saleProduct.images?.[0] ?? saleProduct.thumbnail}
                   alt={saleProduct.title}
                   loading="lazy"
-                  className="h-full w-full object-contain p-12"
+                  className="h-full w-full object-contain p-8 sm:p-12"
                 />
               </div>
-              <span className="absolute -right-3 -top-6 grid h-28 w-28 place-items-center rounded-full bg-gold-light text-center text-ink shadow-2xl sm:-right-6">
-                <span className="font-display text-3xl leading-none">
+              <span className="absolute -top-5 right-3 grid h-20 w-20 place-items-center rounded-full bg-gold-light text-center text-night shadow-2xl sm:-right-6 sm:-top-6 sm:h-28 sm:w-28">
+                <span className="font-display text-2xl leading-none sm:text-3xl">
                   −{Math.round(saleProduct.discountPercentage)}%
                   <span className="mt-1 block font-body text-[10px] font-semibold uppercase tracking-[0.2em]">Now</span>
                 </span>
@@ -293,7 +298,7 @@ function Home() {
             </div>
             <div className="lg:pl-8">
               <p className="eyebrow text-gold-light">The private sale</p>
-              <h2 id="sale-title" className="mt-5 font-display text-4xl leading-[1.05] md:text-6xl">
+              <h2 id="sale-title" className="mt-5 font-display text-4xl leading-[1.05] md:text-5xl lg:text-6xl">
                 Rare finds, <em className="text-gold-light">gently</em> reduced.
               </h2>
               <p className="mt-6 max-w-md leading-relaxed text-cream/70">
@@ -325,12 +330,15 @@ function Home() {
 
       {/* Testimonials */}
       {testimonials.length > 0 && (
-        <section className="bg-sand py-20 md:py-28" aria-labelledby="reviews-title">
+        <section className="bg-sand py-14 md:py-20 lg:py-28" aria-labelledby="reviews-title">
           <div className="container-x">
             <SectionHeading id="reviews-title" align="center" eyebrow="Kind words" title="Loved by our clients" />
-            <div className="mt-14 grid gap-6 md:grid-cols-3">
+            <div className="-mx-5 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 sm:-mx-8 sm:px-8 md:mx-0 md:mt-14 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
               {testimonials.map((review) => (
-                <figure key={`${review.reviewerName}-${review.date}`} className="flex flex-col bg-surface p-8 md:p-10">
+                <figure
+                  key={`${review.reviewerName}-${review.date}`}
+                  className="flex w-[82%] shrink-0 snap-center flex-col bg-surface p-7 sm:w-[60%] md:w-auto md:p-10"
+                >
                   <Rating value={review.rating} readOnly size="small" />
                   <blockquote className="mt-6 flex-1 font-display text-2xl leading-snug">“{review.comment}”</blockquote>
                   <figcaption className="mt-8 flex items-center gap-4 border-t border-line pt-6">
@@ -350,7 +358,7 @@ function Home() {
       )}
 
       {/* Newsletter */}
-      <section className="py-20 md:py-28" aria-labelledby="newsletter-title">
+      <section className="py-14 md:py-20 lg:py-28" aria-labelledby="newsletter-title">
         <div className="container-x">
           <div className="relative overflow-hidden bg-surface px-6 py-16 text-center ring-1 ring-line md:px-16 md:py-20">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold-soft blur-2xl" />
@@ -383,7 +391,7 @@ function Home() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="Your email address"
-                    className="h-14 min-w-0 flex-1 border border-line bg-ivory px-5 text-sm outline-none transition focus:border-ink"
+                    className="h-14 w-full min-w-0 shrink-0 border border-line bg-ivory px-5 text-sm outline-none transition focus:border-ink sm:w-auto sm:flex-1"
                   />
                   <button type="submit" className="btn-primary h-14">
                     Subscribe

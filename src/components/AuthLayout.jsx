@@ -47,7 +47,20 @@ function AuthLayout({ children }) {
       </aside>
 
       <div className="flex items-center justify-center px-5 py-14 sm:px-10 lg:py-20">
-        <div className="w-full max-w-md animate-fade-up">{children}</div>
+        <div className="w-full max-w-md animate-fade-up">
+          <div className="mb-10 flex items-center gap-4 border-b border-line pb-8 lg:hidden" aria-hidden="true">
+            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-gold/50">
+              <span className="inline-block -translate-y-[15%] font-display text-[28px] italic leading-none">
+                g<span className="not-italic text-gold">.</span>
+              </span>
+            </span>
+            <span>
+              <span className="block text-[10px] font-semibold uppercase tracking-[0.28em] text-gold">The goodthings circle</span>
+              <span className="mt-1 block font-display text-lg">A quieter kind of luxury.</span>
+            </span>
+          </div>
+          {children}
+        </div>
       </div>
     </div>
   )

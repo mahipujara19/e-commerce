@@ -11,6 +11,7 @@ const PALETTES = {
     ink: '#171412',
     ivory: '#faf7f2',
     paper: '#ffffff',
+    sand: '#f1ebe1',
     stone: '#6f665d',
     line: '#e7e0d5',
     inputBorder: '#e2d9cc',
@@ -22,6 +23,7 @@ const PALETTES = {
     ink: '#f0eae0',
     ivory: '#12100e',
     paper: '#1a1714',
+    sand: '#221f1b',
     stone: '#a69c90',
     line: '#342f29',
     inputBorder: '#3a342d',
@@ -67,7 +69,16 @@ const buildTheme = (mode) => {
         },
       },
       MuiRating: { styleOverrides: { root: { color: c.gold } } },
-      MuiAlert: { styleOverrides: { root: { borderRadius: 2 } } },
+      MuiAlert: {
+        styleOverrides: {
+          root: { borderRadius: 2 },
+          standardInfo: {
+            backgroundColor: c.sand,
+            color: c.ink,
+            '& .MuiAlert-icon': { color: c.gold },
+          },
+        },
+      },
       MuiBadge: { styleOverrides: { badge: { fontSize: 10, fontWeight: 700 } } },
     },
   })

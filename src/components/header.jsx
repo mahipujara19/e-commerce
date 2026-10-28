@@ -21,7 +21,7 @@ const navLinkClass = (isActive) =>
 
 function Logo({ className = '' }) {
   return (
-    <Link to="/" className={`font-display text-[26px] font-semibold tracking-tight md:text-[30px] ${className}`}>
+    <Link to="/" className={`whitespace-nowrap font-display text-[23px] font-semibold tracking-tight sm:text-[26px] md:text-[30px] ${className}`}>
       good<span className="font-normal italic">things</span>
       <span className="text-gold">.</span>
     </Link>
@@ -72,7 +72,10 @@ function Header() {
   return (
     <>
       <div className="bg-night px-4 py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.22em] text-cream/90 sm:text-[11px]">
-        Complimentary shipping over $75 <span className="mx-2 text-gold-light">✦</span> 30-day returns
+        Complimentary shipping over $75
+        <span className="hidden sm:inline">
+          <span className="mx-2 text-gold-light">✦</span> 30-day returns
+        </span>
       </div>
 
       <header className="sticky top-0 z-40 border-b border-line bg-ivory/90 backdrop-blur-md">
@@ -101,8 +104,9 @@ function Header() {
 
           <Logo />
 
-          <div className="flex items-center justify-end gap-1 sm:gap-2">
+          <div className="flex items-center justify-end gap-0 sm:gap-2">
             <IconButton
+              className="hidden sm:inline-flex"
               onClick={() => dispatch(toggleTheme())}
               aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
@@ -120,7 +124,7 @@ function Header() {
                   onClick={(event) => setAccountAnchor(event.currentTarget)}
                   aria-haspopup="menu"
                   aria-label="Account menu"
-                  className="flex items-center gap-2 rounded-full py-1 pl-1 pr-1 transition hover:bg-sand sm:pr-3"
+                  className="hidden items-center gap-2 rounded-full py-1 pl-1 pr-1 transition hover:bg-sand sm:flex sm:pr-3"
                 >
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-ink text-[11px] font-semibold text-ivory">
                     {initials || 'GT'}
@@ -147,7 +151,7 @@ function Header() {
                 </Menu>
               </>
             ) : (
-              <IconButton component={Link} to="/login" aria-label="Sign in">
+              <IconButton component={Link} to="/login" aria-label="Sign in" className="hidden sm:inline-flex">
                 <PersonOutlineRoundedIcon />
               </IconButton>
             )}
@@ -227,10 +231,29 @@ function Header() {
           </nav>
 
           <div className="mt-auto space-y-3 pt-10">
+            <button
+              type="button"
+              onClick={() => dispatch(toggleTheme())}
+              className="flex w-full items-center justify-between border-y border-line py-4 text-sm font-medium"
+            >
+              <span>{theme === 'dark' ? 'Dark mode' : 'Light mode'}</span>
+              <span className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-stone">
+                {theme === 'dark' ? <LightModeOutlinedIcon sx={{ fontSize: 18 }} /> : <DarkModeOutlinedIcon sx={{ fontSize: 18 }} />}
+                Switch
+              </span>
+            </button>
             {isAuthenticated ? (
-              <button type="button" onClick={handleLogout} className="btn-outline w-full">
-                Sign out
-              </button>
+              <>
+                <p className="pt-2 text-sm text-stone">
+                  Signed in as <span className="font-medium text-ink">{user?.email}</span>
+                </p>
+                <Link to="/checkout" onClick={() => setMenuOpen(false)} className="btn-primary w-full">
+                  Checkout
+                </Link>
+                <button type="button" onClick={handleLogout} className="btn-outline w-full">
+                  Sign out
+                </button>
+              </>
             ) : (
               <>
                 <Link to="/login" onClick={() => setMenuOpen(false)} className="btn-primary w-full">

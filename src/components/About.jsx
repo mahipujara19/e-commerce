@@ -30,10 +30,10 @@ function About() {
 
   return (
     <>
-      <section className="container-x grid items-center gap-16 py-16 md:py-24 lg:grid-cols-2" aria-labelledby="about-title">
+      <section className="container-x grid items-center gap-12 py-12 sm:py-16 md:grid-cols-2 md:gap-10 md:py-20 lg:gap-16 lg:py-24" aria-labelledby="about-title">
         <div className="animate-fade-up">
           <p className="eyebrow">Our story</p>
-          <h1 id="about-title" className="mt-5 font-display text-5xl leading-[1.04] tracking-tight md:text-7xl">
+          <h1 id="about-title" className="mt-5 font-display text-[40px] leading-[1.04] tracking-tight sm:text-5xl lg:text-7xl">
             Made for the everyday, <em className="text-gold">built</em> to be kept.
           </h1>
           <p className="mt-8 max-w-lg text-lg leading-relaxed text-stone">
@@ -74,7 +74,7 @@ function About() {
         </dl>
       </section>
 
-      <section className="py-20 md:py-28" aria-labelledby="values-title">
+      <section className="py-14 md:py-20 lg:py-28" aria-labelledby="values-title">
         <div className="container-x">
           <SectionHeading id="values-title" align="center" eyebrow="What we stand for" title="Our values" />
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

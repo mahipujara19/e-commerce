@@ -62,7 +62,7 @@ function Product() {
   }
 
   return (
-    <section id="shop" className="scroll-mt-24 py-20 md:py-28" aria-labelledby="shop-title">
+    <section id="shop" className="scroll-mt-24 py-14 md:py-20 lg:py-28" aria-labelledby="shop-title">
       <div className="container-x">
         <SectionHeading
           id="shop-title"

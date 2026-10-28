@@ -118,8 +118,8 @@ function ProductItem({ id }) {
         </ol>
       </nav>
 
-      <section className="mt-8 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16" aria-labelledby="product-title">
-        <div className="lg:sticky lg:top-28 lg:self-start">
+      <section className="mt-6 grid gap-8 md:mt-8 md:grid-cols-2 md:gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16" aria-labelledby="product-title">
+        <div className="md:sticky md:top-28 md:self-start">
           <div className="relative aspect-square overflow-hidden bg-sand">
             <img
               key={images[activeIndex]}
@@ -153,7 +153,7 @@ function ProductItem({ id }) {
 
         <div className="lg:pt-4">
           <p className="eyebrow">{product.brand || formatCategory(product.category)}</p>
-          <h1 id="product-title" className="mt-4 font-display text-4xl leading-tight tracking-tight md:text-5xl">
+          <h1 id="product-title" className="mt-3 font-display text-[32px] leading-tight tracking-tight sm:mt-4 sm:text-4xl lg:text-5xl">
             {product.title}
           </h1>
           <a href="#reviews" className="mt-5 inline-flex items-center gap-2 text-sm text-stone hover:text-ink">
@@ -186,7 +186,7 @@ function ProductItem({ id }) {
             </p>
           )}
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-2 sm:gap-3">
             <QuantityControl
               value={quantity}
               label={product.title}
@@ -195,24 +195,28 @@ function ProductItem({ id }) {
               canDecrease={quantity > 1}
               canIncrease={quantity < maxQuantity}
             />
-            <button type="button" onClick={handleAdd} disabled={maxQuantity === 0} className="btn-primary h-12 min-w-[220px] flex-1">
+            <button type="button" onClick={handleAdd} disabled={maxQuantity === 0} className="btn-primary h-12 min-w-0 flex-1 px-4 sm:px-7 md:order-last md:w-full md:flex-none xl:order-none xl:w-auto xl:flex-1">
               <ShoppingBagOutlinedIcon sx={{ fontSize: 18 }} />
-              {maxQuantity === 0
-                ? inStock ? 'All stock in your bag' : 'Out of stock'
-                : `Add to bag · ${money(product.price * quantity)}`}
+              {maxQuantity === 0 ? (
+                inStock ? 'In your bag' : 'Out of stock'
+              ) : (
+                <span className="truncate">
+                  Add to bag<span className="hidden sm:inline"> · {money(product.price * quantity)}</span>
+                </span>
+              )}
             </button>
             <button
               type="button"
               onClick={() => setLiked((value) => !value)}
               aria-pressed={liked}
               aria-label={liked ? 'Remove from wishlist' : 'Save to wishlist'}
-              className="grid h-12 w-12 place-items-center border border-line bg-surface transition hover:border-ink"
+              className="grid h-12 w-12 place-items-center border border-line bg-surface transition hover:border-ink md:ml-auto xl:ml-0"
             >
               {liked ? <FavoriteRoundedIcon sx={{ fontSize: 20 }} className="text-gold" /> : <FavoriteBorderRoundedIcon sx={{ fontSize: 20 }} />}
             </button>
           </div>
 
-          <ul className="mt-10 grid gap-5 border-y border-line py-7 sm:grid-cols-3">
+          <ul className="mt-10 grid gap-4 border-y border-line py-7 sm:grid-cols-3 md:grid-cols-1 xl:grid-cols-3">
             {perks.map(({ icon: Icon, label }) => (
               <li key={label} className="flex items-start gap-3 text-sm">
                 <Icon sx={{ fontSize: 20 }} className="mt-0.5 shrink-0 text-gold" />
@@ -253,7 +257,7 @@ function ProductItem({ id }) {
       </section>
 
       {product.reviews?.length > 0 && (
-        <section id="reviews" className="mt-24 scroll-mt-28" aria-labelledby="product-reviews-title">
+        <section id="reviews" className="mt-16 scroll-mt-28 md:mt-24" aria-labelledby="product-reviews-title">
           <SectionHeading
             id="product-reviews-title"
             eyebrow="Reviews"
@@ -276,9 +280,9 @@ function ProductItem({ id }) {
       )}
 
       {related.length > 0 && (
-        <section className="mt-24" aria-labelledby="related-title">
+        <section className="mt-16 md:mt-24" aria-labelledby="related-title">
           <SectionHeading id="related-title" eyebrow="Complete the look" title="You may also like" />
-          <div className="mt-10 grid grid-cols-2 gap-x-5 gap-y-12 lg:grid-cols-4">
+          <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-5 md:grid-cols-4">
             {related.map((item) => (
               <ProductCard key={item.id} product={item} />
             ))}

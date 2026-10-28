@@ -5,9 +5,9 @@ const YEAR = new Date().getFullYear()
 
 const linkClass ='text-sm text-cream/60 transition-colors hover:text-cream'
 
-function FooterColumn({ title, children }) {
+function FooterColumn({ title, children, className = '' }) {
   return (
-    <div>
+    <div className={className}>
       <h3 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gold-light">{title}</h3>
       <ul className="mt-6 space-y-3.5">{children}</ul>
     </div>
@@ -20,8 +20,8 @@ function Footer() {
 
   return (
     <footer className="bg-night text-cream">
-      <div className="container-x grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:py-20">
-        <div>
+      <div className="container-x grid grid-cols-2 gap-x-6 gap-y-10 py-14 md:gap-12 md:py-16 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:py-20">
+        <div className="col-span-2 lg:col-span-1">
           <Link to="/" className="font-display text-3xl font-semibold tracking-tight">
             good<span className="font-normal italic">things</span>
             <span className="text-gold-light">.</span>
@@ -54,7 +54,7 @@ function Footer() {
           <li><Link to="/login" className={linkClass}>Sign in</Link></li>
         </FooterColumn>
 
-        <FooterColumn title="Client care">
+        <FooterColumn title="Client care" className="col-span-2 sm:col-span-1 md:col-span-2 lg:col-span-1">
           <li className="text-sm text-cream/60">Complimentary shipping over $75</li>
           <li className="text-sm text-cream/60">30-day returns</li>
           <li className="text-sm text-cream/60">Secure, encrypted checkout</li>
