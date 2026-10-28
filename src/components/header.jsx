@@ -5,11 +5,13 @@ import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded'
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
+import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
+import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { setSearchQuery } from '../toolkit/searchSlice'
 import { logout } from '../toolkit/authSlice'
-import { openCart } from '../toolkit/uiSlice'
+import { openCart, toggleTheme } from '../toolkit/uiSlice'
 import { goToShop } from '../utils/format'
 
 const navLinkClass = (isActive) =>
@@ -36,6 +38,7 @@ function Header() {
   const searchQuery = useSelector((state) => state.search.query)
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
   const user = useSelector((state) => state.auth.user)
+  const theme = useSelector((state) => state.ui.theme)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -68,7 +71,7 @@ function Header() {
 
   return (
     <>
-      <div className="bg-ink px-4 py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.22em] text-ivory/90 sm:text-[11px]">
+      <div className="bg-night px-4 py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.22em] text-cream/90 sm:text-[11px]">
         Complimentary shipping over $75 <span className="mx-2 text-gold-light">✦</span> 30-day returns
       </div>
 
@@ -99,6 +102,13 @@ function Header() {
           <Logo />
 
           <div className="flex items-center justify-end gap-1 sm:gap-2">
+            <IconButton
+              onClick={() => dispatch(toggleTheme())}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            >
+              {theme === 'dark' ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
+            </IconButton>
             <IconButton onClick={() => setSearchOpen((value) => !value)} aria-label="Search products" aria-expanded={searchOpen}>
               {searchOpen ? <CloseRoundedIcon /> : <SearchRoundedIcon />}
             </IconButton>
@@ -123,7 +133,7 @@ function Header() {
                   onClose={() => setAccountAnchor(null)}
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                  slotProps={{ paper: { sx: { mt: 1, minWidth: 220, borderRadius: 0, border: '1px solid #e7e0d5' } } }}
+                  slotProps={{ paper: { sx: { mt: 1, minWidth: 220, borderRadius: 0, border: '1px solid rgb(var(--line))' } } }}
                 >
                   <div className="px-4 pb-3 pt-2">
                     <p className="text-[10px] uppercase tracking-[0.2em] text-stone">Signed in as</p>
@@ -183,7 +193,7 @@ function Header() {
         anchor="left"
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        slotProps={{ paper: { sx: { width: 'min(88vw, 360px)', bgcolor: '#faf7f2' } } }}
+        slotProps={{ paper: { sx: { width: 'min(88vw, 360px)', bgcolor: 'rgb(var(--ivory))', backgroundImage: 'none' } } }}
       >
         <div className="flex h-full flex-col px-7 py-6">
           <div className="flex items-center justify-between">

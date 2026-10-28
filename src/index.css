@@ -3,18 +3,42 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --ivory: 250 247 242;
+    --sand: 241 235 225;
+    --surface: 255 255 255;
+    --ink: 23 20 18;
+    --stone: 111 102 93;
+    --line: 231 224 213;
+    --gold: 140 107 56;
+    --gold-soft: 243 234 217;
+    color-scheme: light;
+  }
+
+  .dark {
+    --ivory: 18 16 14;
+    --sand: 34 31 27;
+    --surface: 26 23 20;
+    --ink: 240 234 224;
+    --stone: 166 156 144;
+    --line: 52 47 41;
+    --gold: 201 169 110;
+    --gold-soft: 54 45 32;
+    color-scheme: dark;
+  }
+
   html {
     scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-ivory font-body text-ink antialiased;
+    @apply bg-ivory font-body text-ink antialiased transition-colors duration-300;
     min-width: 320px;
   }
 
   ::selection {
-    background: #171412;
-    color: #faf7f2;
+    background: rgb(var(--ink));
+    color: rgb(var(--ivory));
   }
 }
 
@@ -36,7 +60,7 @@
   }
 
   .btn-light {
-    @apply btn bg-ivory text-ink hover:bg-gold-light;
+    @apply btn bg-cream text-night hover:bg-gold-light;
   }
 
   .btn-outline {

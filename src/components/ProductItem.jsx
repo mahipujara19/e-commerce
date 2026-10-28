@@ -19,7 +19,7 @@ import SectionHeading from './SectionHeading'
 
 const accordionSx = {
   bgcolor: 'transparent',
-  borderBottom: '1px solid #e7e0d5',
+  borderBottom: '1px solid rgb(var(--line))',
   '&::before': { display: 'none' },
 }
 
@@ -206,7 +206,7 @@ function ProductItem({ id }) {
               onClick={() => setLiked((value) => !value)}
               aria-pressed={liked}
               aria-label={liked ? 'Remove from wishlist' : 'Save to wishlist'}
-              className="grid h-12 w-12 place-items-center border border-line bg-white transition hover:border-ink"
+              className="grid h-12 w-12 place-items-center border border-line bg-surface transition hover:border-ink"
             >
               {liked ? <FavoriteRoundedIcon sx={{ fontSize: 20 }} className="text-gold" /> : <FavoriteBorderRoundedIcon sx={{ fontSize: 20 }} />}
             </button>
@@ -262,7 +262,7 @@ function ProductItem({ id }) {
           />
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             {product.reviews.map((review) => (
-              <figure key={`${review.reviewerName}-${review.date}`} className="bg-white p-7 ring-1 ring-line">
+              <figure key={`${review.reviewerName}-${review.date}`} className="bg-surface p-7 ring-1 ring-line">
                 <Rating value={review.rating} readOnly size="small" />
                 <blockquote className="mt-4 font-display text-xl leading-snug">“{review.comment}”</blockquote>
                 <figcaption className="mt-6 text-sm">

@@ -85,7 +85,7 @@ function Addtocart({ onClose }) {
             })}
           </ul>
 
-          <div className="border-t border-line bg-white px-6 py-6">
+          <div className="border-t border-line bg-surface px-6 py-6">
             <div className="flex items-baseline justify-between">
               <span className="text-sm uppercase tracking-[0.16em] text-stone">Subtotal</span>
               <span className="font-display text-2xl">{money(subtotal)}</span>

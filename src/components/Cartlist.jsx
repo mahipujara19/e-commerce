@@ -84,7 +84,7 @@ function Cartlist() {
         </ul>
 
         <aside className="lg:sticky lg:top-28 lg:self-start" aria-labelledby="summary-title">
-          <div className="bg-white p-7 ring-1 ring-line sm:p-8">
+          <div className="bg-surface p-7 ring-1 ring-line sm:p-8">
             <h2 id="summary-title" className="font-display text-2xl">Order summary</h2>
             <div className="mt-6">
               <FreeShippingMeter subtotal={subtotal} />

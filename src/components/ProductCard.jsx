@@ -46,7 +46,7 @@ function ProductCard({ product }) {
           onClick={() => setLiked((value) => !value)}
           aria-pressed={liked}
           aria-label={`${liked ? 'Remove' : 'Save'} ${product.title} ${liked ? 'from' : 'to'} wishlist`}
-          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-ink shadow-sm transition hover:bg-white"
+          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-surface/90 text-ink shadow-sm transition hover:bg-surface"
         >
           {liked ? (
             <FavoriteRoundedIcon sx={{ fontSize: 18 }} className="text-gold" />

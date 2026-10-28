@@ -58,7 +58,7 @@ function Steps({ current }) {
 
 function CheckoutSection({ step, title, action, children }) {
   return (
-    <section className="bg-white p-6 ring-1 ring-line sm:p-8" aria-labelledby={`checkout-step-${step}`}>
+    <section className="bg-surface p-6 ring-1 ring-line sm:p-8" aria-labelledby={`checkout-step-${step}`}>
       <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
         <h2 id={`checkout-step-${step}`} className="flex items-center gap-4 font-display text-2xl">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-ink font-body text-sm font-semibold text-ivory">{step}</span>
@@ -76,22 +76,22 @@ function CardPreview({ name, number, expiry }) {
   const masked = `${digits}${'•'.repeat(Math.max(16 - digits.length, 0))}`.replace(/(.{4})/g, '$1 ').trim()
 
   return (
-    <div className="relative w-full max-w-sm overflow-hidden rounded-xl bg-gradient-to-br from-[#2e2721] via-ink to-black p-6 text-ivory shadow-2xl" aria-hidden="true">
+    <div className="relative w-full max-w-sm overflow-hidden rounded-xl bg-gradient-to-br from-[#2e2721] via-night to-black p-6 text-cream shadow-2xl" aria-hidden="true">
       <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gold-light/25 blur-2xl" />
       <div className="relative flex items-start justify-between">
         <span className="font-display text-xl">good<em>things</em><span className="text-gold-light">.</span></span>
-        <span className="text-[9px] uppercase tracking-[0.25em] text-ivory/60">Private client</span>
+        <span className="text-[9px] uppercase tracking-[0.25em] text-cream/60">Private client</span>
       </div>
       <div className="relative mt-7 h-8 w-11 rounded-md bg-gradient-to-br from-gold-light to-gold" />
       <p className="relative mt-5 font-mono text-lg tracking-[0.16em] sm:text-xl">{masked}</p>
-      <div className="relative mt-5 flex justify-between gap-4 text-[9px] uppercase tracking-[0.2em] text-ivory/60">
+      <div className="relative mt-5 flex justify-between gap-4 text-[9px] uppercase tracking-[0.2em] text-cream/60">
         <div className="min-w-0">
           Card holder
-          <p className="mt-1 truncate text-sm normal-case tracking-normal text-ivory">{name || 'Your name'}</p>
+          <p className="mt-1 truncate text-sm normal-case tracking-normal text-cream">{name || 'Your name'}</p>
         </div>
         <div className="text-right">
           Expires
-          <p className="mt-1 text-sm tracking-normal text-ivory">{expiry || 'MM/YY'}</p>
+          <p className="mt-1 text-sm tracking-normal text-cream">{expiry || 'MM/YY'}</p>
         </div>
       </div>
     </div>
@@ -268,7 +268,7 @@ function CheckoutForm() {
             <strong className="text-ink">{user?.email}</strong>.
           </p>
           {orderNumber && (
-            <p className="mx-auto mt-8 inline-block bg-white px-6 py-4 text-sm ring-1 ring-line">
+            <p className="mx-auto mt-8 inline-block bg-surface px-6 py-4 text-sm ring-1 ring-line">
               Order number <strong className="ml-2 font-mono tracking-wider">{orderNumber}</strong>
             </p>
           )}
@@ -411,7 +411,7 @@ function CheckoutForm() {
         </form>
 
         <aside className="lg:sticky lg:top-28 lg:self-start" aria-labelledby="checkout-summary-title">
-          <div className="bg-white p-7 ring-1 ring-line sm:p-8">
+          <div className="bg-surface p-7 ring-1 ring-line sm:p-8">
             <h2 id="checkout-summary-title" className="font-display text-2xl">Order summary</h2>
             <ul className="mt-6 space-y-5">
               {cartItems.map((item) => (

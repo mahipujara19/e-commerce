@@ -16,8 +16,6 @@ const VALUES = [
 
 function About() {
   const products = useSelector((state) => state.products.items)
-  const mainImage = products.find((product) => product.category === 'furniture') ?? products[0]
-  const accentImage = products.find((product) => product.category === 'womens-jewellery') ?? products[1]
 
   const stats = useMemo(() => {
     const categories = new Set(products.map((product) => product.category)).size
@@ -47,21 +45,29 @@ function About() {
             they deserve.
           </p>
         </div>
-        <div className="relative pb-16 pr-10 sm:pr-16">
-          <div className="aspect-[4/5] bg-sand">
-            {mainImage && <img src={mainImage.images?.[0] ?? mainImage.thumbnail} alt="" className="h-full w-full object-contain p-12" />}
+        <div className="relative pb-14 pr-8 sm:pr-14" aria-hidden="true">
+          <div className="relative grid aspect-[4/5] place-items-center overflow-hidden bg-night text-cream">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-gold-light/20 blur-3xl" />
+            <div className="relative grid h-56 w-56 place-items-center rounded-full border border-gold-light/40 sm:h-72 sm:w-72">
+              <div className="absolute inset-3 rounded-full border border-gold-light/20" />
+              <span className="inline-block -translate-y-[18%] font-display text-[110px] italic leading-none sm:text-[140px]">
+                g<span className="not-italic text-gold-light">.</span>
+              </span>
+            </div>
+            <p className="absolute left-8 top-8 text-[11px] uppercase tracking-[0.32em] text-cream/50">Made to be kept</p>
           </div>
-          <div className="absolute bottom-0 right-0 aspect-square w-1/2 bg-white p-6 shadow-2xl ring-1 ring-line">
-            {accentImage && <img src={accentImage.thumbnail} alt="" className="h-full w-full object-contain" />}
+          <div className="absolute bottom-0 right-0 w-3/5 bg-surface p-7 shadow-2xl ring-1 ring-line">
+            <p className="eyebrow">Our promise</p>
+            <p className="mt-3 font-display text-2xl leading-snug">Fewer, better things — chosen with care.</p>
           </div>
         </div>
       </section>
 
-      <section className="bg-ink text-ivory" aria-label="goodthings in numbers">
+      <section className="bg-night text-cream" aria-label="goodthings in numbers">
         <dl className="container-x grid grid-cols-2 gap-y-10 py-16 md:grid-cols-4">
           {stats.map((stat) => (
             <div key={stat.label} className="flex flex-col-reverse text-center">
-              <dt className="mt-2 text-[11px] uppercase tracking-[0.2em] text-ivory/60">{stat.label}</dt>
+              <dt className="mt-2 text-[11px] uppercase tracking-[0.2em] text-cream/60">{stat.label}</dt>
               <dd className="font-display text-5xl text-gold-light">{stat.value}</dd>
             </div>
           ))}
@@ -73,7 +79,7 @@ function About() {
           <SectionHeading id="values-title" align="center" eyebrow="What we stand for" title="Our values" />
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {VALUES.map(({ icon: Icon, title, text }) => (
-              <div key={title} className="bg-white p-8 ring-1 ring-line transition hover:-translate-y-1 hover:shadow-xl">
+              <div key={title} className="bg-surface p-8 ring-1 ring-line transition hover:-translate-y-1 hover:shadow-xl">
                 <span className="grid h-14 w-14 place-items-center rounded-full bg-sand text-gold">
                   <Icon />
                 </span>

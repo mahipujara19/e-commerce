@@ -53,7 +53,7 @@ function Product() {
 
   const chipClass = (active) =>
     `shrink-0 rounded-full border px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors ${
-      active ? 'border-ink bg-ink text-ivory' : 'border-line bg-white text-ink hover:border-ink'
+      active ? 'border-ink bg-ink text-ivory' : 'border-line bg-surface text-ink hover:border-ink'
     }`
 
   const clearFilters = () => {
@@ -78,7 +78,7 @@ function Product() {
                 id="sort"
                 value={sort}
                 onChange={(event) => setSort(event.target.value)}
-                className="h-11 cursor-pointer border border-line bg-white px-4 pr-8 text-sm outline-none focus:border-ink"
+                className="h-11 cursor-pointer border border-line bg-surface px-4 pr-8 text-sm outline-none focus:border-ink"
               >
                 {SORT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -131,7 +131,7 @@ function Product() {
         )}
 
         {status === 'succeeded' && filteredProducts.length === 0 && (
-          <div className="mt-12 bg-white px-6 py-20 text-center ring-1 ring-line">
+          <div className="mt-12 bg-surface px-6 py-20 text-center ring-1 ring-line">
             <p className="font-display text-3xl">Nothing found</p>
             <p className="mt-3 text-stone">
               No pieces match{searchQuery ? ` “${searchQuery}”` : ''}

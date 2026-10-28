@@ -67,6 +67,7 @@ function SignupForm() {
   const location = useLocation()
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
   const user = useSelector((state) => state.auth.user)
+  const theme = useSelector((state) => state.ui.theme)
   const from = location.state?.from || '/'
 
   const formik = useFormik({
@@ -227,6 +228,7 @@ function SignupForm() {
             <ReCAPTCHA
               ref={recaptchaRef}
               sitekey={RECAPTCHA_SITE_KEY}
+              theme={theme}
               onChange={(token) => setCaptchaToken(token)}
               onExpired={() => setCaptchaToken(null)}
             />

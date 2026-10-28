@@ -1,5 +1,17 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
+const EXCLUDED_CATEGORIES = new Set([
+  'vehicle',
+  'kitchen-accessories',
+  'groceries',
+  'tablets',
+  'smartphones',
+  'motorcycle',
+  'laptops',
+  'skin-care',
+  'sports-accessories',
+])
+
 export const fetchproduct = createAsyncThunk(
   'products/fetchProducts',
   async () => {
@@ -10,7 +22,7 @@ export const fetchproduct = createAsyncThunk(
     }
 
     const result = await response.json()
-    return result.products
+    return result.products.filter((product) => !EXCLUDED_CATEGORIES.has(product.category))
   },
   {
     condition: (_, { getState }) => {

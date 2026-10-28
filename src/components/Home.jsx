@@ -104,7 +104,7 @@ function Home() {
     <>
       {/* Hero */}
       <section className="relative overflow-hidden bg-sand">
-        <div className="pointer-events-none absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-white/50 blur-3xl" />
+        <div className="pointer-events-none absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-surface/50 blur-3xl" />
         <div className="container-x relative grid items-center gap-12 py-16 md:py-20 lg:min-h-[min(calc(100svh-7.5rem),780px)] lg:grid-cols-[1.05fr_1fr] lg:py-12">
           <div className="max-w-xl animate-fade-up">
             <p className="eyebrow">New season · The autumn edit</p>
@@ -137,7 +137,7 @@ function Home() {
           </div>
 
           <div className="relative mx-auto w-full max-w-[560px] animate-fade-in">
-            <div className="absolute inset-[5%] rounded-full bg-gradient-to-br from-white to-gold-soft" />
+            <div className="absolute inset-[5%] rounded-full bg-gradient-to-br from-surface to-gold-soft" />
             <div className="absolute inset-0 rounded-full border border-ink/10" />
             <div className="relative z-10 aspect-square w-full animate-float motion-reduce:animate-none">
               {heroProducts.map((product, index) => (
@@ -156,7 +156,7 @@ function Home() {
               <Link
                 key={heroProduct.id}
                 to={`/productitem/${heroProduct.id}`}
-                className="absolute bottom-4 left-0 z-20 flex animate-fade-in items-center gap-4 bg-white/95 p-3 pr-5 shadow-xl backdrop-blur transition hover:-translate-y-0.5 sm:-left-4 sm:bottom-10"
+                className="absolute bottom-4 left-0 z-20 flex animate-fade-in items-center gap-4 bg-surface/95 p-3 pr-5 shadow-xl backdrop-blur transition hover:-translate-y-0.5 sm:-left-4 sm:bottom-10"
               >
                 <img src={heroProduct.thumbnail} alt="" className="h-14 w-14 bg-sand object-contain p-1" />
                 <span>
@@ -236,7 +236,7 @@ function Home() {
                 ))
               : categories.map((category) => (
                   <button key={category.name} type="button" onClick={() => handleCategory(category.name)} className="group text-left">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-white ring-1 ring-line">
+                    <div className="relative aspect-[3/4] overflow-hidden bg-surface ring-1 ring-line">
                       <img
                         src={category.image}
                         alt=""
@@ -255,7 +255,7 @@ function Home() {
       </section>
 
       {/* Bestsellers */}
-      <section className="bg-white py-20 md:py-28" aria-labelledby="bestsellers-title">
+      <section className="bg-surface py-20 md:py-28" aria-labelledby="bestsellers-title">
         <div className="container-x">
           <SectionHeading
             id="bestsellers-title"
@@ -273,7 +273,7 @@ function Home() {
 
       {/* Sale banner */}
       {saleProduct && (
-        <section className="bg-ink text-ivory" aria-labelledby="sale-title">
+        <section className="bg-night text-cream" aria-labelledby="sale-title">
           <div className="container-x grid items-center gap-14 py-20 md:py-28 lg:grid-cols-2">
             <div className="relative">
               <div className="aspect-[4/3] bg-[#efe9df]">
@@ -296,11 +296,11 @@ function Home() {
               <h2 id="sale-title" className="mt-5 font-display text-4xl leading-[1.05] md:text-6xl">
                 Rare finds, <em className="text-gold-light">gently</em> reduced.
               </h2>
-              <p className="mt-6 max-w-md leading-relaxed text-ivory/70">
+              <p className="mt-6 max-w-md leading-relaxed text-cream/70">
                 Our most-wanted pieces at their best price of the season — including the {saleProduct.title}, now{' '}
                 {money(saleProduct.price)}.
               </p>
-              <ul className="mt-8 space-y-3 text-sm text-ivory/80">
+              <ul className="mt-8 space-y-3 text-sm text-cream/80">
                 {['Authenticity guaranteed', 'Complimentary gift wrapping', '30-day returns on sale items'].map((item) => (
                   <li key={item} className="flex items-center gap-3">
                     <CheckRoundedIcon sx={{ fontSize: 18 }} className="text-gold-light" /> {item}
@@ -311,7 +311,7 @@ function Home() {
                 <Link to={`/productitem/${saleProduct.id}`} className="btn-light">
                   Shop this piece
                 </Link>
-                <a href="#shop" className="text-[12px] font-semibold uppercase tracking-[0.18em] text-ivory/80 underline-offset-8 hover:text-ivory hover:underline">
+                <a href="#shop" className="text-[12px] font-semibold uppercase tracking-[0.18em] text-cream/80 underline-offset-8 hover:text-cream hover:underline">
                   Browse all
                 </a>
               </div>
@@ -330,7 +330,7 @@ function Home() {
             <SectionHeading id="reviews-title" align="center" eyebrow="Kind words" title="Loved by our clients" />
             <div className="mt-14 grid gap-6 md:grid-cols-3">
               {testimonials.map((review) => (
-                <figure key={`${review.reviewerName}-${review.date}`} className="flex flex-col bg-white p-8 md:p-10">
+                <figure key={`${review.reviewerName}-${review.date}`} className="flex flex-col bg-surface p-8 md:p-10">
                   <Rating value={review.rating} readOnly size="small" />
                   <blockquote className="mt-6 flex-1 font-display text-2xl leading-snug">“{review.comment}”</blockquote>
                   <figcaption className="mt-8 flex items-center gap-4 border-t border-line pt-6">
@@ -352,7 +352,7 @@ function Home() {
       {/* Newsletter */}
       <section className="py-20 md:py-28" aria-labelledby="newsletter-title">
         <div className="container-x">
-          <div className="relative overflow-hidden bg-white px-6 py-16 text-center ring-1 ring-line md:px-16 md:py-20">
+          <div className="relative overflow-hidden bg-surface px-6 py-16 text-center ring-1 ring-line md:px-16 md:py-20">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold-soft blur-2xl" />
             <div className="relative">
               <p className="eyebrow">The inner circle</p>

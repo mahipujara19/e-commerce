@@ -1,22 +1,28 @@
+const themed = (name) => `rgb(var(--${name}) / <alpha-value>)`
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        ink: '#171412',
-        ivory: '#faf7f2',
-        sand: '#f1ebe1',
-        stone: '#6f665d',
-        line: '#e7e0d5',
+        ink: themed('ink'),
+        ivory: themed('ivory'),
+        sand: themed('sand'),
+        surface: themed('surface'),
+        stone: themed('stone'),
+        line: themed('line'),
         gold: {
-          DEFAULT: '#8c6b38',
+          DEFAULT: themed('gold'),
           light: '#c9a96e',
-          soft: '#f3ead9',
+          soft: themed('gold-soft'),
         },
+        night: '#171412',
+        cream: '#faf7f2',
       },
       borderColor: {
-        DEFAULT: '#e7e0d5',
+        DEFAULT: 'rgb(var(--line))',
       },
       fontFamily: {
         display: ['"Playfair Display"', 'Georgia', 'serif'],
