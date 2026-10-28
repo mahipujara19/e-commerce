@@ -1,15 +1,24 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-export const fetchproduct = createAsyncThunk('products/fetchProducts', async () => {
-  const response = await fetch('https://dummyjson.com/products')
+export const fetchproduct = createAsyncThunk(
+  'products/fetchProducts',
+  async () => {
+    const response = await fetch('https://dummyjson.com/products?limit=0')
 
-  if (!response.ok) {
-    throw new Error(`Product request failed (${response.status})`)
-  }
+    if (!response.ok) {
+      throw new Error(`Product request failed (${response.status})`)
+    }
 
-  const result = await response.json()
-  return result.products
-})
+    const result = await response.json()
+    return result.products
+  },
+  {
+    condition: (_, { getState }) => {
+      const { status } = getState().products
+      return status !== 'loading' && status !== 'succeeded'
+    },
+  },
+)
 
 const initialState = {
   items: [],

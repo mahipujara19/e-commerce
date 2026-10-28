@@ -1,191 +1,167 @@
-import { useEffect, useMemo } from 'react'
-import {
-  Button,
-  Card,
-  CardActionArea,
-  CardContent,
-  CardMedia,
-  Chip,
-  IconButton,
-  Rating,
-  Typography,
-} from '@mui/material'
-import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded'
+import { useMemo, useState } from 'react'
+import { Alert } from '@mui/material'
 import { useDispatch, useSelector } from 'react-redux'
-import { Link } from 'react-router-dom'
 import { fetchproduct } from '../toolkit/productslice'
-import { setCategory } from '../toolkit/searchSlice'
+import { setCategory, setSearchQuery } from '../toolkit/searchSlice'
+import { featuredRank, formatCategory } from '../utils/format'
+import ProductCard, { ProductCardSkeleton } from './ProductCard'
+import SectionHeading from './SectionHeading'
 
-/**
- * Product listing component.
- *
- * Reads searchQuery and category from the Redux search slice, then filters
- * the product list so the user sees only matching items.
- *
- * Category chips are generated dynamically from the fetched products
- * (so they always reflect the categories the API returns).
- *
- * Search matches against title, category, brand, and description (case-insensitive).
- */
+const SORT_OPTIONS = [
+  { value: 'featured', label: 'Featured' },
+  { value: 'price-asc', label: 'Price: low to high' },
+  { value: 'price-desc', label: 'Price: high to low' },
+  { value: 'rating', label: 'Top rated' },
+  { value: 'discount', label: 'Biggest savings' },
+]
+
+const SORTERS = {
+  featured: (a, b) => featuredRank(a) - featuredRank(b) || b.rating - a.rating,
+  'price-asc': (a, b) => a.price - b.price,
+  'price-desc': (a, b) => b.price - a.price,
+  rating: (a, b) => b.rating - a.rating,
+  discount: (a, b) => b.discountPercentage - a.discountPercentage,
+}
+
+const PAGE_SIZE = 12
+
 function Product() {
   const dispatch = useDispatch()
   const { items: products, status, error } = useSelector((state) => state.products)
-
-  // Read search and filter state from Redux
   const searchQuery = useSelector((state) => state.search.query)
   const activeCategory = useSelector((state) => state.search.category)
+  const [sort, setSort] = useState('featured')
 
-  // Fetch products from the API on first render
-  useEffect(() => {
-    dispatch(fetchproduct())
-  }, [dispatch])
+  const filterKey = `${searchQuery}|${activeCategory}|${sort}`
+  const [page, setPage] = useState({ key: filterKey, count: PAGE_SIZE })
+  const visibleCount = page.key === filterKey ? page.count : PAGE_SIZE
 
-  // Build a unique, sorted list of categories from the products for the filter chips
-  const categories = useMemo(() => {
-    const cats = [...new Set(products.map((p) => p.category))]
-    cats.sort()
-    return cats
-  }, [products])
+  const categories = useMemo(() => [...new Set(products.map((product) => product.category))].sort(), [products])
 
-  /**
-   * Filter products by both search query AND active category.
-   * - Category filter: if a category is selected, only show products in that category
-   * - Search filter: match against title, category, brand, and description (case-insensitive)
-   * - Both filters stack — the user can search within a category
-   */
   const filteredProducts = useMemo(() => {
     const query = searchQuery.toLowerCase().trim()
-    return products.filter((product) => {
-      // Category filter: skip products that don't match the selected category
+    const matches = products.filter((product) => {
       if (activeCategory && product.category !== activeCategory) return false
-
-      // Search filter: check if query appears in any searchable field
-      if (query) {
-        const searchable = [
-          product.title,
-          product.category,
-          product.brand,
-          product.description,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-        if (!searchable.includes(query)) return false
-      }
-
-      return true
+      if (!query) return true
+      return [product.title, product.category, product.brand].filter(Boolean).join(' ').toLowerCase().includes(query)
     })
-  }, [products, searchQuery, activeCategory])
+    return [...matches].sort(SORTERS[sort])
+  }, [products, searchQuery, activeCategory, sort])
+
+  const visibleProducts = filteredProducts.slice(0, visibleCount)
+  const loading = status === 'idle' || status === 'loading'
+
+  const chipClass = (active) =>
+    `shrink-0 rounded-full border px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+      active ? 'border-ink bg-ink text-ivory' : 'border-line bg-white text-ink hover:border-ink'
+    }`
+
+  const clearFilters = () => {
+    dispatch(setCategory(''))
+    dispatch(setSearchQuery(''))
+  }
 
   return (
-    <section className="product-section" id="collection" aria-labelledby="collection-title">
-      <div className="section-heading">
-        <div>
-          <span className="eyebrow">CURATED FOR YOU</span>
-          <Typography component="h2" id="collection-title" className="section-title">
-            Everyday favourites
-          </Typography>
-        </div>
-        <Button className="view-all-button" endIcon={<span aria-hidden="true">↗</span>}>
-          View all
-        </Button>
-      </div>
-
-      {/*
-       * Category filter chips — dynamically generated from fetched product categories.
-       * Clicking a chip dispatches setCategory to the Redux store.
-       * "All things" resets the filter (empty string) to show every product.
-       * The active chip gets highlighted styling via category-chip-active class.
-       */}
-      <div className="category-row" aria-label="Product categories">
-        <Button
-          className={`category-chip ${activeCategory === '' ? 'category-chip-active' : ''}`}
-          onClick={() => dispatch(setCategory(''))}
-        >
-          All things
-        </Button>
-        {categories.map((cat) => (
-          <Button
-            key={cat}
-            className={`category-chip ${activeCategory === cat ? 'category-chip-active' : ''}`}
-            onClick={() => dispatch(setCategory(cat))}
-          >
-            {cat}
-          </Button>
-        ))}
-      </div>
-
-      {/* Loading and error states */}
-      {status === 'loading' && <p role="status">Loading products…</p>}
-      {status === 'failed' && <p role="alert">Could not load products: {error}</p>}
-
-      {/* Empty state — shown when search/filter returns no results */}
-      {status === 'succeeded' && filteredProducts.length === 0 && (
-        <div className="no-results">
-          <Typography className="no-results-text">
-            No products found{searchQuery ? ` for "${searchQuery}"` : ''}{activeCategory ? ` in ${activeCategory}` : ''}.
-          </Typography>
-          <Button
-            onClick={() => dispatch(setCategory(''))}
-            className="no-results-btn"
-          >
-            Clear filters
-          </Button>
-        </div>
-      )}
-
-      {/* Product grid — displays filtered products as cards */}
-      <div className="product-grid">
-        {filteredProducts.map((product) => (
-          <Card className="product-card" elevation={0} key={product.id}>
-            <div className={`product-image-wrap product-image-${product.color}`}>
-              {/* Clickable image area — navigates to product detail page */}
-              <CardActionArea
-                component={Link}
-                to={`/productitem/${product.id}`}
-                aria-label={`View ${product.title}`}
-                className="product-card-link"
+    <section id="shop" className="scroll-mt-24 py-20 md:py-28" aria-labelledby="shop-title">
+      <div className="container-x">
+        <SectionHeading
+          id="shop-title"
+          eyebrow="The collection"
+          title="Shop all pieces"
+          action={
+            <div className="flex items-center gap-4">
+              <p className="text-sm text-stone" aria-live="polite">
+                {loading ? 'Loading…' : `${filteredProducts.length} pieces`}
+              </p>
+              <label htmlFor="sort" className="sr-only">Sort products</label>
+              <select
+                id="sort"
+                value={sort}
+                onChange={(event) => setSort(event.target.value)}
+                className="h-11 cursor-pointer border border-line bg-white px-4 pr-8 text-sm outline-none focus:border-ink"
               >
-                <CardMedia
-                  component="img"
-                  image={product.thumbnail}
-                  alt={product.title}
-                  className="product-image"
-                />
-              </CardActionArea>
-              {/* Optional product label badge (e.g. "New", "Sale") */}
-              {product.label && (
-                <Chip label={product.label} size="small" className="product-label" />
-              )}
-              {/* Wishlist button */}
-              {/* <IconButton aria-label={`Add ${product.title} to wishlist`} className="favorite-button">
-                <FavoriteBorderRoundedIcon />
-              </IconButton> */}
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
             </div>
-            <CardContent className="product-card-content">
-              {/* Clickable info area — also navigates to product detail */}
-              <CardActionArea
-                component={Link}
-                to={`/productitem/${product.id}`}
-                className="product-info-link"
-              >
-                <Typography component="p" className="product-category">
-                  {product.category}
-                </Typography>
-                <div className="product-name-price">
-                  <Typography component="h3" className="product-name">
-                    {product.title}
-                  </Typography>
-                  <span className="product-price">${product.price.toFixed(2)}</span>
-                </div>
-                <div className="product-rating">
-                  <Rating value={product.rating} precision={0.1} readOnly size="small" />
-                  <span>{product.rating} ({product.reviews.length})</span>
-                </div>
-              </CardActionArea>
-            </CardContent>
-          </Card>
-        ))}
+          }
+        />
+
+        <div className="-mx-5 mt-10 flex gap-2 overflow-x-auto px-5 pb-2 sm:mx-0 sm:flex-wrap sm:px-0" aria-label="Filter by category">
+          <button type="button" className={chipClass(activeCategory === '')} onClick={() => dispatch(setCategory(''))} aria-pressed={activeCategory === ''}>
+            All
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category}
+              type="button"
+              className={chipClass(activeCategory === category)}
+              onClick={() => dispatch(setCategory(category))}
+              aria-pressed={activeCategory === category}
+            >
+              {formatCategory(category)}
+            </button>
+          ))}
+        </div>
+
+        {searchQuery && (
+          <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
+            <span className="text-stone">
+              Results for <strong className="text-ink">“{searchQuery}”</strong>
+            </span>
+            <button type="button" onClick={() => dispatch(setSearchQuery(''))} className="text-[11px] font-semibold uppercase tracking-[0.16em] underline underline-offset-4 hover:text-gold">
+              Clear search
+            </button>
+          </div>
+        )}
+
+        {status === 'failed' && (
+          <Alert
+            severity="error"
+            className="mt-10"
+            action={
+              <button type="button" onClick={() => dispatch(fetchproduct())} className="px-3 text-sm font-semibold underline">
+                Retry
+              </button>
+            }
+          >
+            We couldn&apos;t load the collection: {error}
+          </Alert>
+        )}
+
+        {status === 'succeeded' && filteredProducts.length === 0 && (
+          <div className="mt-12 bg-white px-6 py-20 text-center ring-1 ring-line">
+            <p className="font-display text-3xl">Nothing found</p>
+            <p className="mt-3 text-stone">
+              No pieces match{searchQuery ? ` “${searchQuery}”` : ''}
+              {activeCategory ? ` in ${formatCategory(activeCategory)}` : ''}.
+            </p>
+            <button type="button" onClick={clearFilters} className="btn-outline mt-8">
+              Clear all filters
+            </button>
+          </div>
+        )}
+
+        <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-5 md:grid-cols-3 xl:grid-cols-4">
+          {loading
+            ? Array.from({ length: 8 }, (_, index) => <ProductCardSkeleton key={index} />)
+            : visibleProducts.map((product) => <ProductCard key={product.id} product={product} />)}
+        </div>
+
+        {visibleCount < filteredProducts.length && (
+          <div className="mt-16 flex flex-col items-center gap-5">
+            <p className="text-sm text-stone">
+              Showing {visibleProducts.length} of {filteredProducts.length}
+            </p>
+            <div className="h-px w-48 bg-line">
+              <div className="h-px bg-ink" style={{ width: `${(visibleProducts.length / filteredProducts.length) * 100}%` }} />
+            </div>
+            <button type="button" onClick={() => setPage({ key: filterKey, count: visibleCount + PAGE_SIZE })} className="btn-outline">
+              Load more
+            </button>
+          </div>
+        )}
       </div>
     </section>
   )

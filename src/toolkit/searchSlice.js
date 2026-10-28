@@ -1,27 +1,38 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-/**
- * Manages product search query and category filter state.
- * The header's search bar dispatches setSearchQuery,
- * and the category chips dispatch setCategory.
- * Product.jsx reads both to filter the displayed product list.
- */
+const STORAGE_KEY = 'search'
+
+const loadSearch = () => {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null')
+    return {
+      query: typeof saved?.query === 'string' ? saved.query : '',
+      category: typeof saved?.category === 'string' ? saved.category : '',
+    }
+  } catch {
+    return { query: '', category: '' }
+  }
+}
+
+const saveSearch = (state) => {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ query: state.query, category: state.category }))
+  } catch {
+    // Storage unavailable (private mode or quota) — filters just won't persist.
+  }
+}
+
 const searchSlice = createSlice({
   name: 'search',
-  initialState: {
-    // The text the user types in the search bar
-    query: '',
-    // The currently selected category filter (empty string = show all)
-    category: '',
-  },
+  initialState: loadSearch(),
   reducers: {
-    // Updates the search query as the user types
     setSearchQuery: (state, action) => {
       state.query = action.payload
+      saveSearch(state)
     },
-    // Sets the active category filter (e.g. "groceries", "beauty", or "" for all)
     setCategory: (state, action) => {
       state.category = action.payload
+      saveSearch(state)
     },
   },
 })

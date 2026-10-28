@@ -2,10 +2,10 @@ import { createSlice } from '@reduxjs/toolkit'
 
 /**
  * ── authSlice ──
- * Manages user authentication state and saved addresses.
+ * Manages user authentication state.
  *
  * Two separate localStorage keys:
- * - 'auth'            → current session (isAuthenticated, user, addresses)
+ * - 'auth'            → current session (isAuthenticated, user)
  * - 'registeredUsers' → array of all signed-up users (survives logout)
  *
  * Flow:
@@ -18,7 +18,21 @@ import { createSlice } from '@reduxjs/toolkit'
 const loadSession = () => {
   try {
     const saved = localStorage.getItem('auth')
-    if (saved) return JSON.parse(saved)
+    if (saved) {
+      const session = JSON.parse(saved)
+      if (!session || typeof session !== 'object') return null
+
+      const sanitizedSession = {
+        isAuthenticated: session.isAuthenticated,
+        user: session.user,
+      }
+
+      if (Object.hasOwn(session, 'addresses')) {
+        localStorage.setItem('auth', JSON.stringify(sanitizedSession))
+      }
+
+      return sanitizedSession
+    }
   } catch {
     // Corrupted data — start fresh
   }
@@ -62,13 +76,15 @@ const savedSession = loadSession()
 const initialState = {
   isAuthenticated: savedSession?.isAuthenticated ?? false,
   user: savedSession?.user ?? null,
-  addresses: savedSession?.addresses ?? [],
 }
 
 // Persist current session state to localStorage
 const saveSession = (state) => {
   try {
-    localStorage.setItem('auth', JSON.stringify(state))
+    localStorage.setItem('auth', JSON.stringify({
+      isAuthenticated: state.isAuthenticated,
+      user: state.user,
+    }))
   } catch {
     // localStorage full — fail silently
   }
@@ -87,7 +103,6 @@ const authSlice = createSlice({
       const { firstName, lastName, email, phone, password } = action.payload
       state.isAuthenticated = true
       state.user = { firstName, lastName, email, phone }
-      state.addresses = []
       saveSession(state)
       // Save to persistent registeredUsers store (survives logout)
       saveRegisteredUser({ firstName, lastName, email, phone, password })
@@ -101,11 +116,6 @@ const authSlice = createSlice({
       const { email, firstName, lastName, phone } = action.payload
       state.isAuthenticated = true
       state.user = { firstName, lastName, email, phone }
-      // Restore saved addresses from any previous session if they exist
-      const prevSession = loadSession()
-      if (prevSession?.user?.email === email && prevSession.addresses?.length) {
-        state.addresses = prevSession.addresses
-      }
       saveSession(state)
     },
 
@@ -116,31 +126,6 @@ const authSlice = createSlice({
     logout: (state) => {
       state.isAuthenticated = false
       state.user = null
-      state.addresses = []
-      saveSession(state)
-    },
-
-    // Adds a new shipping address to the user's saved addresses
-    addAddress: (state, action) => {
-      state.addresses.push({
-        id: Date.now(),
-        ...action.payload,
-      })
-      saveSession(state)
-    },
-
-    // Removes a saved address by its id
-    removeAddress: (state, action) => {
-      state.addresses = state.addresses.filter((a) => a.id !== action.payload)
-      saveSession(state)
-    },
-
-    // Updates an existing address
-    updateAddress: (state, action) => {
-      const index = state.addresses.findIndex((a) => a.id === action.payload.id)
-      if (index !== -1) {
-        state.addresses[index] = action.payload
-      }
       saveSession(state)
     },
   },
@@ -148,5 +133,5 @@ const authSlice = createSlice({
 
 // Export the registeredUsers loader so LoginForm can check credentials
 export { loadRegisteredUsers }
-export const { signup, login, logout, addAddress, removeAddress, updateAddress } = authSlice.actions
+export const { signup, login, logout } = authSlice.actions
 export default authSlice.reducer

@@ -1,58 +1,28 @@
-import { Button, Typography } from '@mui/material'
-import { Link } from 'react-router-dom'
-import SearchOffRoundedIcon from '@mui/icons-material/SearchOffRounded'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { goToShop } from '../utils/format'
 
-/**
- * ──────────────────────────────────────────────
- * NotFound — Custom 404 page
- * ──────────────────────────────────────────────
- *
- * Shown when the user navigates to a URL that doesn't match any route.
- * Provides a friendly message and a clear path back to the shop.
- */
 function NotFound() {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+
   return (
-    <section className="not-found-page" aria-labelledby="not-found-title">
-      <div className="not-found-card">
-        {/* Decorative icon */}
-        <div className="not-found-icon-wrap">
-          <SearchOffRoundedIcon className="not-found-icon" />
-        </div>
-
-        {/* Large 404 number */}
-        <Typography className="not-found-code" aria-hidden="true">
+    <section className="container-x grid min-h-[70vh] place-items-center py-24 text-center" aria-labelledby="not-found-title">
+      <div className="max-w-lg animate-fade-up">
+        <p className="eyebrow">Error 404</p>
+        <p aria-hidden="true" className="mt-4 font-display text-[120px] leading-none text-ink/10 md:text-[180px]">
           404
-        </Typography>
-
-        {/* Friendly heading */}
-        <Typography component="h1" id="not-found-title" className="not-found-title">
-          Page not found
-        </Typography>
-
-        {/* Helpful description */}
-        <Typography className="not-found-description">
-          The page you&apos;re looking for doesn&apos;t exist or may have been moved.
-          Let&apos;s get you back to something good.
-        </Typography>
-
-        {/* Action buttons */}
-        <div className="not-found-actions">
-          <Button
-            component={Link}
-            to="/"
-            variant="contained"
-            className="not-found-home-btn"
-          >
-            Back to shop
-          </Button>
-          <Button
-            component={Link}
-            to="/"
-            variant="outlined"
-            className="not-found-browse-btn"
-          >
-            Browse products
-          </Button>
+        </p>
+        <h1 id="not-found-title" className="-mt-4 font-display text-4xl md:text-5xl">
+          This page has wandered off
+        </h1>
+        <p className="mt-5 leading-relaxed text-stone">
+          The page you&apos;re looking for doesn&apos;t exist or may have moved. Let&apos;s get you back to something good.
+        </p>
+        <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
+          <Link to="/" className="btn-primary">Back to home</Link>
+          <button type="button" onClick={() => goToShop(navigate, pathname)} className="btn-outline">
+            Browse the collection
+          </button>
         </div>
       </div>
     </section>

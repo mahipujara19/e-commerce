@@ -1,8 +1,11 @@
+import { useEffect } from 'react'
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { Drawer } from '@mui/material'
 import Header from './components/header.jsx'
-import Product from './components/Product'
-import Addtocart from './components/Addtocart'
-import './App.css'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import Footer from './components/Footer.jsx'
+import Home from './components/Home.jsx'
+import Addtocart from './components/Addtocart.jsx'
 import Cartlist from './components/Cartlist.jsx'
 import ProductItem from './components/ProductItem.jsx'
 import SignupForm from './components/SignupForm.jsx'
@@ -10,87 +13,59 @@ import LoginForm from './components/LoginForm.jsx'
 import CheckoutForm from './components/CheckoutForm.jsx'
 import NotFound from './components/NotFound.jsx'
 import About from './components/About.jsx'
+import { fetchproduct } from './toolkit/productslice'
+import { closeCart } from './toolkit/uiSlice'
 
-/**
- * App — Root component that defines the page layout and all routes.
- *
- * E-commerce flow:
- * 1. Browse products (/) — anyone can do this, no login required
- * 2. View product detail (/productitem/:id) — no login required
- * 3. Add to cart — no login required (cart stored in Redux + localStorage)
- * 4. Review cart (/cart) — no login required
- * 5. Checkout (/checkout) — REQUIRES authentication
- *    → If not logged in, redirects to /login with return to /checkout
- *    → After login/signup, returns to /checkout
- *
- * Routes:
- * - /                   → Home page with product grid + cart sidebar
- * - /cart               → Full cart review page
- * - /productitem/:id    → Single product detail page
- * - /signup             → User registration (Formik + Yup + reCAPTCHA + honeypot)
- * - /login              → User sign-in form
- * - /checkout           → Checkout (auth-gated, geolocation, saved addresses)
- * - *                   → Custom 404 page for any unmatched routes
- */
-function App() {
+function ScrollToTop() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [pathname])
+
+  return null
+}
+
+function CartDrawer() {
+  const dispatch = useDispatch()
+  const open = useSelector((state) => state.ui.cartOpen)
+  const close = () => dispatch(closeCart())
+
   return (
+    <Drawer anchor="right" open={open} onClose={close} slotProps={{ paper: { sx: { width: { xs: '100%', sm: 440 } } } }}>
+      <Addtocart onClose={close} />
+    </Drawer>
+  )
+}
 
-    <div className="storefront">
-      <BrowserRouter>
-      <Header />
+function App() {
+  const dispatch = useDispatch()
 
-      <main className="page-content">
-        {/* Hero banner — welcoming message at the top of every page */}
-        <section className="welcome-banner" aria-label="Store introduction">
-          <div className="welcome-copy">
-            <span className="eyebrow">THE EVERYDAY EDIT</span>
-            <h1>Little things.<br />Better living.</h1>
-            <p>Thoughtful essentials for slower mornings and softer landings.</p>
-          </div>
-          <div className="welcome-art" aria-hidden="true">
-            <span className="art-orbit art-orbit-one" />
-            <span className="art-orbit art-orbit-two" />
-            <span className="art-sun" />
-            <span className="art-vase art-vase-large" />
-            <span className="art-vase art-vase-small" />
-          </div>
-          <span className="banner-note">MADE TO BE KEPT</span>
-        </section>
+  useEffect(() => {
+    dispatch(fetchproduct())
+  }, [dispatch])
 
-        <Routes>
-          {/* Home — product grid with cart sidebar */}
-          <Route
-            path="/"
-            element={
-              <div className="shop-layout">
-                <Product />
-                <Addtocart />
-              </div>
-            }
-          />
-          {/* Cart review page */}
-          <Route path="/cart" element={<Cartlist />} />
-          {/* Single product detail */}
-          <Route path="/productitem/:id" element={<ProductItem />} />
-          {/* Signup form — Formik + Yup + honeypot + reCAPTCHA */}
-          <Route path="/signup" element={<SignupForm />} />
-          {/* Login form — email + password, redirects after auth */}
-          <Route path="/login" element={<LoginForm />} />
-          {/* Checkout — auth-gated, geolocation, saved addresses, payment */}
-          <Route path="/checkout" element={<CheckoutForm />} />
-          {/* About — brand story and values */}
-          <Route path="/about" element={<About />} />
-          {/* 404 — catches all unmatched routes */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
-
-      <footer className="store-footer">
-        <span>Made for the everyday.</span>
-        <span>Free shipping on orders over $75</span>
-      </footer>
-      </BrowserRouter>
-    </div>
+  return (
+    <BrowserRouter>
+      <ScrollToTop />
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/cart" element={<Cartlist />} />
+            <Route path="/productitem/:id" element={<ProductItem />} />
+            <Route path="/signup" element={<SignupForm />} />
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/checkout" element={<CheckoutForm />} />
+            <Route path="/about" element={<About />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+      <CartDrawer />
+    </BrowserRouter>
   )
 }
 

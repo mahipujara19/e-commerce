@@ -1,35 +1,45 @@
-@import '@fontsource/roboto/400.css';
-@import '@fontsource/roboto/500.css';
-@import '@fontsource/roboto/700.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  font-family: 'Roboto', Arial, sans-serif;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-optical-sizing: auto;
-  font-weight: 400;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
 
-  color: #292c25;
-  background: #fff;
+  body {
+    @apply bg-ivory font-body text-ink antialiased;
+    min-width: 320px;
+  }
+
+  ::selection {
+    background: #171412;
+    color: #faf7f2;
+  }
 }
 
-* {
-  box-sizing: border-box;
-}
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-[1320px] px-5 sm:px-8 lg:px-10;
+  }
 
-body {
-  min-width: 320px;
-  min-height: 100vh;
-  margin: 0;
-}
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.28em] text-gold;
+  }
 
-button,
-input {
-  font: inherit;
-}
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-7 py-3.5 text-[12px] font-semibold uppercase tracking-[0.16em] transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-40;
+  }
 
-a {
-  color: inherit;
+  .btn-primary {
+    @apply btn bg-ink text-ivory hover:bg-gold;
+  }
+
+  .btn-light {
+    @apply btn bg-ivory text-ink hover:bg-gold-light;
+  }
+
+  .btn-outline {
+    @apply btn border border-ink text-ink hover:bg-ink hover:text-ivory;
+  }
 }

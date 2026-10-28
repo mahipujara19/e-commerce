@@ -1,151 +1,118 @@
-import {
-  Button,
-  Divider,
-  IconButton,
-  LinearProgress,
-  Stack,
-  Typography,
-} from '@mui/material'
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
-import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined'
+import { IconButton } from '@mui/material'
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
-import AddRoundedIcon from '@mui/icons-material/AddRounded'
-import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { changeQuantity, clearItem, removeItem } from '../toolkit/slice'
+import { cartTotals, formatCategory, money } from '../utils/format'
+import QuantityControl from './QuantityControl'
+import FreeShippingMeter from './FreeShippingMeter'
 
-const freeShippingMinimum = 75
-
-function Addtocart() {
-  const cartItems = useSelector((state) => state.cart.items)
+function Addtocart({ onClose }) {
   const dispatch = useDispatch()
-  const itemCount = cartItems.reduce((total, item) => total + (item.quantity ?? 1), 0)
-  const subtotal = cartItems.reduce((total, item) => total + item.price * (item.quantity ?? 1), 0)
-  const shippingProgress = Math.min((subtotal / freeShippingMinimum) * 100, 100)
-  const remainingForFreeShipping = Math.max(freeShippingMinimum - subtotal, 0)
+  const cartItems = useSelector((state) => state.cart.items)
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
+  const { count, subtotal } = cartTotals(cartItems)
 
   return (
-    <aside className="cart-panel" aria-labelledby="cart-title">
-      <div className="cart-heading">
-        <div>
-          <span className="eyebrow">YOUR GOOD THINGS</span>
-          <Typography component="h2" id="cart-title" className="cart-title">
-            Your bag <span>({itemCount})</span>
-          </Typography>
-        </div>
-        {itemCount > 0 && (
-          <IconButton
-            aria-label="Clear cart"
-            className="cart-more-button"
-            onClick={() => dispatch(clearItem())}
-          >
-            <DeleteOutlineRoundedIcon />
-          </IconButton>
-        )}
+    <div className="flex h-full flex-col bg-ivory">
+      <div className="flex items-center justify-between border-b border-line px-6 py-5">
+        <h2 className="font-display text-2xl">
+          Your bag <span className="font-body text-sm text-stone">({count})</span>
+        </h2>
+        <IconButton onClick={onClose} aria-label="Close bag" edge="end">
+          <CloseRoundedIcon />
+        </IconButton>
       </div>
 
-      <div className="shipping-progress">
-        <div className="shipping-message">
-          <LocalShippingOutlinedIcon />
-          <span>
-            {remainingForFreeShipping > 0 ? (
-              <>You&apos;re <strong>${remainingForFreeShipping.toFixed(2)}</strong> away from free shipping</>
-            ) : (
-              <strong>You unlocked free shipping!</strong>
-            )}
+      {count === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+          <span className="grid h-20 w-20 place-items-center rounded-full bg-sand text-gold">
+            <ShoppingBagOutlinedIcon sx={{ fontSize: 32 }} />
           </span>
+          <p className="mt-6 font-display text-2xl">Your bag is empty</p>
+          <p className="mt-2 text-sm text-stone">Pieces you add will appear here.</p>
+          <button type="button" onClick={onClose} className="btn-primary mt-8">
+            Continue shopping
+          </button>
         </div>
-        <LinearProgress
-          variant="determinate"
-          value={shippingProgress}
-          className="shipping-progress-bar"
-          aria-label="Progress toward free shipping"
-        />
-      </div>
-
-      {itemCount > 0 ? (
+      ) : (
         <>
-          <Stack className="cart-items" divider={<Divider flexItem />}>
-            {cartItems.map((item) => (
-              <div className="cart-item" key={item.id}>
-                <img
-                  className="cart-item-image"
-                  src={item.thumbnail}
-                  alt={item.title}
-                />
-                <div className="cart-item-info">
-                  <div className="cart-item-title-row">
-                    <Typography component="h3" className="cart-item-name">
-                      {item.title}
-                    </Typography>
-                    <span className="cart-item-price">
-                      ${(item.price * (item.quantity ?? 1)).toFixed(2)}
-                    </span>
-                  </div>
-                  <span className="cart-item-detail">{item.brand || item.category}</span>
-                  <div className="quantity-control" aria-label={`Quantity: ${item.quantity ?? 1}`}>
-                    <IconButton
-                      aria-label={`Decrease ${item.title} quantity`}
-                      size="small"
-                      onClick={() => dispatch(changeQuantity({ id: item.id, change: -1 }))}
-                    >
-                      <RemoveRoundedIcon />
-                    </IconButton>
-                    <span>{item.quantity ?? 1}</span>
-                    <IconButton
-                      aria-label={`Increase ${item.title} quantity`}
-                      size="small"
-                      onClick={() => dispatch(changeQuantity({ id: item.id, change: 1 }))}
-                    >
-                      <AddRoundedIcon />
-                    </IconButton>
-                  </div>
-                  <Button
-                    className="cart-item-remove"
-                    onClick={() => dispatch(removeItem(item))}
-                    aria-label={`Remove ${item.title} from cart`}
-                    startIcon={<DeleteOutlineRoundedIcon />}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </Stack>
-
-          <Divider className="cart-divider" />
-
-          <div className="subtotal-row">
-            <span>Subtotal</span>
-            <strong>${subtotal.toFixed(2)}</strong>
+          <div className="border-b border-line px-6 py-4">
+            <FreeShippingMeter subtotal={subtotal} />
           </div>
-          <p className="tax-note">Taxes and shipping calculated at checkout.</p>
-          <Button
-            component={Link}
-            to="/cart"
-            variant="contained"
-            fullWidth
-            className="checkout-button"
-            endIcon={<span aria-hidden="true">→</span>}
-          >
-            Review your bag
-          </Button>
-          <div className="secure-checkout">
-            <ShoppingBagOutlinedIcon />
-            <span>Thoughtful things, ready when you are</span>
+
+          <ul className="flex-1 divide-y divide-line overflow-y-auto px-6">
+            {cartItems.map((item) => {
+              const quantity = item.quantity ?? 1
+              return (
+                <li key={item.id} className="flex gap-4 py-5">
+                  <Link to={`/productitem/${item.id}`} onClick={onClose} className="h-24 w-20 shrink-0 bg-sand p-2">
+                    <img src={item.thumbnail} alt={item.title} className="h-full w-full object-contain" />
+                  </Link>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[10px] uppercase tracking-[0.18em] text-stone">
+                          {item.brand || formatCategory(item.category)}
+                        </p>
+                        <Link to={`/productitem/${item.id}`} onClick={onClose} className="mt-1 line-clamp-2 font-display text-base leading-snug hover:text-gold">
+                          {item.title}
+                        </Link>
+                      </div>
+                      <p className="shrink-0 text-sm font-semibold">{money(item.price * quantity)}</p>
+                    </div>
+                    <div className="mt-auto flex items-center justify-between pt-3">
+                      <QuantityControl
+                        size="sm"
+                        value={quantity}
+                        label={item.title}
+                        onDecrease={() => dispatch(changeQuantity({ id: item.id, change: -1 }))}
+                        onIncrease={() => dispatch(changeQuantity({ id: item.id, change: 1 }))}
+                        canIncrease={item.stock == null || quantity < item.stock}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => dispatch(removeItem(item))}
+                        className="text-[11px] uppercase tracking-[0.16em] text-stone underline-offset-4 hover:text-ink hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+
+          <div className="border-t border-line bg-white px-6 py-6">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm uppercase tracking-[0.16em] text-stone">Subtotal</span>
+              <span className="font-display text-2xl">{money(subtotal)}</span>
+            </div>
+            <p className="mt-1 text-xs text-stone">Shipping and taxes calculated at checkout.</p>
+            <Link
+              to={isAuthenticated ? '/checkout' : '/login'}
+              state={isAuthenticated ? undefined : { from: '/checkout' }}
+              onClick={onClose}
+              className="btn-primary mt-5 w-full"
+            >
+              Checkout
+            </Link>
+            <Link to="/cart" onClick={onClose} className="btn-outline mt-3 w-full">
+              View bag
+            </Link>
+            <button
+              type="button"
+              onClick={() => dispatch(clearItem())}
+              className="mx-auto mt-4 block text-[11px] uppercase tracking-[0.16em] text-stone underline-offset-4 hover:text-ink hover:underline"
+            >
+              Clear bag
+            </button>
           </div>
         </>
-      ) : (
-        <div className="cart-empty">
-          <ShoppingBagOutlinedIcon />
-          <Typography component="p">Your bag is empty for now.</Typography>
-          <Typography component="p" className="cart-empty-hint">
-            Find a little something you love.
-          </Typography>
-        </div>
       )}
-    </aside>
+    </div>
   )
 }
 
