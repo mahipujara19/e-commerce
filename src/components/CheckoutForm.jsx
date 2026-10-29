@@ -261,8 +261,7 @@ function CheckoutForm() {
         <div className="mx-auto max-w-xl animate-fade-up text-center">
           <div className="flex justify-center"><Steps current={2} /></div>
           <CheckCircleRoundedIcon sx={{ fontSize: 72 }} className="mt-14 text-gold" />
-          <p className="eyebrow mt-6">Order confirmed</p>
-          <h1 className="mt-4 font-display text-4xl leading-tight md:text-5xl">Thank you, {user?.firstName}</h1>
+          <h1 className="mt-6 font-display text-4xl leading-tight md:text-5xl">Thank you, {user?.firstName}</h1>
           <p className="mx-auto mt-5 max-w-md leading-relaxed text-stone">
             Your order is being prepared with care. A confirmation with tracking details will be sent to{' '}
             <strong className="text-ink">{user?.email}</strong>.
@@ -294,8 +293,7 @@ function CheckoutForm() {
     <div className="container-x pb-24 pt-10 md:pt-14">
       <header className="flex flex-col gap-6 border-b border-line pb-8 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="eyebrow flex items-center gap-2"><LockOutlinedIcon sx={{ fontSize: 14 }} /> Secure checkout</p>
-          <h1 className="mt-3 font-display text-4xl md:text-5xl">Complete your order</h1>
+          <h1 className="font-display text-4xl md:text-5xl">Complete your order</h1>
           <p className="mt-3 text-sm text-stone">
             Ordering as <strong className="text-ink">{user?.firstName} {user?.lastName}</strong> ({user?.email})
           </p>

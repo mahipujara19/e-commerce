@@ -24,7 +24,21 @@ const PERKS = [
   { icon: SupportAgentOutlinedIcon, title: 'Concierge support', text: 'Here for you 7 days a week' },
 ]
 
-const scrollToShop = () => document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+const scrollToShop = () => {
+  const shopSection = document.getElementById('shop')
+  if (!shopSection) {
+    if (window.location.hash !== '#shop') {
+      window.history.replaceState(null, '', '#shop')
+    }
+    return
+  }
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  shopSection.scrollIntoView({
+    behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    block: 'start',
+  })
+}
 
 function Home() {
   const dispatch = useDispatch()
@@ -107,15 +121,21 @@ function Home() {
         <div className="pointer-events-none absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-surface/50 blur-3xl" />
         <div className="container-x relative grid items-center gap-14 py-12 sm:py-16 md:grid-cols-[1.1fr_1fr] md:gap-8 md:py-20 lg:min-h-[min(calc(100svh-7.5rem),780px)] lg:grid-cols-[1.05fr_1fr] lg:gap-12 lg:py-12">
           <div className="max-w-xl animate-fade-up">
-            <p className="eyebrow">New season · The autumn edit</p>
-            <h1 className="mt-5 font-display text-[42px] leading-[1.03] tracking-tight sm:mt-6 sm:text-6xl md:text-[54px] lg:text-7xl xl:text-[84px]">
+            <h1 className="font-display text-[42px] leading-[1.03] tracking-tight sm:text-6xl md:text-[54px] lg:text-7xl xl:text-[84px]">
               Objects of <em className="text-gold">quiet</em> luxury.
             </h1>
             <p className="mt-6 max-w-md text-[15px] leading-relaxed text-stone sm:mt-7 sm:text-base lg:text-lg">
               Fine jewellery, refined timepieces and signature fragrance — curated for those who buy less, but better.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:gap-4 md:max-w-xs md:flex-col md:gap-3 lg:max-w-none lg:flex-row lg:gap-4">
-              <a href="#shop" className="btn-primary w-full sm:w-auto md:w-full lg:w-auto">
+              <a
+                href="#shop"
+                onClick={(event) => {
+                  event.preventDefault()
+                  scrollToShop()
+                }}
+                className="btn-primary w-full sm:w-auto md:w-full lg:w-auto"
+              >
                 Shop the collection <ArrowForwardRoundedIcon sx={{ fontSize: 18 }} />
               </a>
               <Link to="/about" className="btn-outline w-full sm:w-auto md:w-full lg:w-auto">
@@ -226,7 +246,6 @@ function Home() {
         <div className="container-x">
           <SectionHeading
             id="categories-title"
-            eyebrow="Explore"
             title="Shop by category"
             action={
               <a href="#shop" className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] hover:text-gold">
@@ -264,7 +283,6 @@ function Home() {
         <div className="container-x">
           <SectionHeading
             id="bestsellers-title"
-            eyebrow="Most loved"
             title="Bestsellers"
             description="The pieces our clients return to again and again."
           />
@@ -297,8 +315,7 @@ function Home() {
               </span>
             </div>
             <div className="lg:pl-8">
-              <p className="eyebrow text-gold-light">The private sale</p>
-              <h2 id="sale-title" className="mt-5 font-display text-4xl leading-[1.05] md:text-5xl lg:text-6xl">
+              <h2 id="sale-title" className="font-display text-4xl leading-[1.05] md:text-5xl lg:text-6xl">
                 Rare finds, <em className="text-gold-light">gently</em> reduced.
               </h2>
               <p className="mt-6 max-w-md leading-relaxed text-cream/70">
@@ -332,7 +349,7 @@ function Home() {
       {testimonials.length > 0 && (
         <section className="bg-sand py-14 md:py-20 lg:py-28" aria-labelledby="reviews-title">
           <div className="container-x">
-            <SectionHeading id="reviews-title" align="center" eyebrow="Kind words" title="Loved by our clients" />
+            <SectionHeading id="reviews-title" align="center" title="Loved by our clients" />
             <div className="-mx-5 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 sm:-mx-8 sm:px-8 md:mx-0 md:mt-14 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
               {testimonials.map((review) => (
                 <figure
@@ -363,8 +380,7 @@ function Home() {
           <div className="relative overflow-hidden bg-surface px-6 py-16 text-center ring-1 ring-line md:px-16 md:py-20">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold-soft blur-2xl" />
             <div className="relative">
-              <p className="eyebrow">The inner circle</p>
-              <h2 id="newsletter-title" className="mt-4 font-display text-4xl md:text-5xl">
+              <h2 id="newsletter-title" className="font-display text-4xl md:text-5xl">
                 Join for early access
               </h2>
               <p className="mx-auto mt-4 max-w-md leading-relaxed text-stone">

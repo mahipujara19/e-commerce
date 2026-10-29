@@ -11,7 +11,11 @@ import AuthLayout, { FormDivider } from './AuthLayout'
 
 const loginSchema = Yup.object({
   email: Yup.string().email('Please enter a valid email address').required('Email is required'),
-  password: Yup.string().required('Password is required'),
+  password: Yup.string().min(8, 'Password must be at least 8 characters')
+    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .matches(/[0-9]/, 'Password must contain at least one number')
+    .matches(/[!@#$%^&*]/, 'Password must contain at least one special character (!@#$%^&*)')
+    .required('Password is required'),
 })
 
 function LoginForm() {
@@ -65,8 +69,7 @@ function LoginForm() {
 
   return (
     <AuthLayout>
-      <p className="eyebrow">Welcome back</p>
-      <h1 className="mt-4 font-display text-4xl leading-tight md:text-[44px]">Sign in</h1>
+      <h1 className="font-display text-4xl leading-tight md:text-[44px]">Sign in</h1>
       <p className="mt-3 leading-relaxed text-stone">Access your bag, check out faster and follow your orders.</p>
 
       {from !== '/' && (

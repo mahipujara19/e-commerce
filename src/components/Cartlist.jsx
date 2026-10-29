@@ -33,8 +33,7 @@ function Cartlist() {
     <div className="container-x pb-24 pt-10 md:pt-14">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-8">
         <div>
-          <p className="eyebrow">Your selection</p>
-          <h1 className="mt-3 font-display text-4xl md:text-5xl">Shopping bag</h1>
+          <h1 className="font-display text-4xl md:text-5xl">Shopping bag</h1>
         </div>
         <p className="text-sm text-stone">{count} {count === 1 ? 'item' : 'items'}</p>
       </header>

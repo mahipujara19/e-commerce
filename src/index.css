@@ -47,10 +47,6 @@
     @apply mx-auto w-full max-w-[1320px] px-5 sm:px-8 lg:px-10;
   }
 
-  .eyebrow {
-    @apply text-[11px] font-semibold uppercase tracking-[0.28em] text-gold;
-  }
-
   .btn {
     @apply inline-flex items-center justify-center gap-2 px-7 py-3.5 text-[12px] font-semibold uppercase tracking-[0.16em] transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-40;
   }

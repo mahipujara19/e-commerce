@@ -55,8 +55,7 @@ function AuthLayout({ children }) {
               </span>
             </span>
             <span>
-              <span className="block text-[10px] font-semibold uppercase tracking-[0.28em] text-gold">The goodthings circle</span>
-              <span className="mt-1 block font-display text-lg">A quieter kind of luxury.</span>
+              <span className="block font-display text-lg">A quieter kind of luxury.</span>
             </span>
           </div>
           {children}

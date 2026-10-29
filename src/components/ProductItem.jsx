@@ -72,8 +72,7 @@ function ProductItem({ id }) {
   if (!product) {
     return (
       <div className="container-x py-28 text-center">
-        <p className="eyebrow">Not available</p>
-        <h1 className="mt-4 font-display text-4xl">This piece could not be found</h1>
+        <h1 className="font-display text-4xl">This piece could not be found</h1>
         <Link to="/" className="btn-primary mt-10">Back to the collection</Link>
       </div>
     )
@@ -152,8 +151,7 @@ function ProductItem({ id }) {
         </div>
 
         <div className="lg:pt-4">
-          <p className="eyebrow">{product.brand || formatCategory(product.category)}</p>
-          <h1 id="product-title" className="mt-3 font-display text-[32px] leading-tight tracking-tight sm:mt-4 sm:text-4xl lg:text-5xl">
+          <h1 id="product-title" className="font-display text-[32px] leading-tight tracking-tight sm:text-4xl lg:text-5xl">
             {product.title}
           </h1>
           <a href="#reviews" className="mt-5 inline-flex items-center gap-2 text-sm text-stone hover:text-ink">
@@ -260,7 +258,6 @@ function ProductItem({ id }) {
         <section id="reviews" className="mt-16 scroll-mt-28 md:mt-24" aria-labelledby="product-reviews-title">
           <SectionHeading
             id="product-reviews-title"
-            eyebrow="Reviews"
             title={`${product.rating.toFixed(1)} out of 5`}
             description={`Based on ${product.reviews.length} verified ${product.reviews.length === 1 ? 'review' : 'reviews'}.`}
           />
@@ -281,7 +278,7 @@ function ProductItem({ id }) {
 
       {related.length > 0 && (
         <section className="mt-16 md:mt-24" aria-labelledby="related-title">
-          <SectionHeading id="related-title" eyebrow="Complete the look" title="You may also like" />
+          <SectionHeading id="related-title" title="You may also like" />
           <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-5 md:grid-cols-4">
             {related.map((item) => (
               <ProductCard key={item.id} product={item} />

@@ -8,8 +8,7 @@ function NotFound() {
   return (
     <section className="container-x grid min-h-[70vh] place-items-center py-24 text-center" aria-labelledby="not-found-title">
       <div className="max-w-lg animate-fade-up">
-        <p className="eyebrow">Error 404</p>
-        <p aria-hidden="true" className="mt-4 font-display text-[120px] leading-none text-ink/10 md:text-[180px]">
+        <p aria-hidden="true" className="font-display text-[120px] leading-none text-ink/10 md:text-[180px]">
           404
         </p>
         <h1 id="not-found-title" className="-mt-4 font-display text-4xl md:text-5xl">

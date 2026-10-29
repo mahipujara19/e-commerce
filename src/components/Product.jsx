@@ -66,7 +66,6 @@ function Product() {
       <div className="container-x">
         <SectionHeading
           id="shop-title"
-          eyebrow="The collection"
           title="Shop all pieces"
           action={
             <div className="flex items-center gap-4">

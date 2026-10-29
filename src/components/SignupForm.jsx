@@ -131,8 +131,7 @@ function SignupForm() {
       <AuthLayout>
         <div className="text-center">
           <CheckCircleRoundedIcon sx={{ fontSize: 64 }} className="text-gold" />
-          <p className="eyebrow mt-6">{justJoined ? 'Welcome to the circle' : 'Already a member'}</p>
-          <h1 className="mt-4 font-display text-4xl leading-tight">
+          <h1 className="mt-6 font-display text-4xl leading-tight">
             {justJoined ? 'Your account is ready' : `Welcome back, ${user?.firstName}`}
           </h1>
           <p className="mt-4 leading-relaxed text-stone">
@@ -154,8 +153,7 @@ function SignupForm() {
 
   return (
     <AuthLayout>
-      <p className="eyebrow">Join the circle</p>
-      <h1 className="mt-4 font-display text-4xl leading-tight md:text-[44px]">Create your account</h1>
+      <h1 className="font-display text-4xl leading-tight md:text-[44px]">Create your account</h1>
       <p className="mt-3 leading-relaxed text-stone">Save your bag, track your orders and receive early access to new arrivals.</p>
 
       {from !== '/' && (

@@ -32,8 +32,7 @@ function About() {
     <>
       <section className="container-x grid items-center gap-12 py-12 sm:py-16 md:grid-cols-2 md:gap-10 md:py-20 lg:gap-16 lg:py-24" aria-labelledby="about-title">
         <div className="animate-fade-up">
-          <p className="eyebrow">Our story</p>
-          <h1 id="about-title" className="mt-5 font-display text-[40px] leading-[1.04] tracking-tight sm:text-5xl lg:text-7xl">
+          <h1 id="about-title" className="font-display text-[40px] leading-[1.04] tracking-tight sm:text-5xl lg:text-7xl">
             Made for the everyday, <em className="text-gold">built</em> to be kept.
           </h1>
           <p className="mt-8 max-w-lg text-lg leading-relaxed text-stone">
@@ -57,8 +56,7 @@ function About() {
             <p className="absolute left-8 top-8 text-[11px] uppercase tracking-[0.32em] text-cream/50">Made to be kept</p>
           </div>
           <div className="absolute bottom-0 right-0 w-3/5 bg-surface p-7 shadow-2xl ring-1 ring-line">
-            <p className="eyebrow">Our promise</p>
-            <p className="mt-3 font-display text-2xl leading-snug">Fewer, better things — chosen with care.</p>
+            <p className="font-display text-2xl leading-snug">Fewer, better things — chosen with care.</p>
           </div>
         </div>
       </section>
@@ -76,7 +74,7 @@ function About() {
 
       <section className="py-14 md:py-20 lg:py-28" aria-labelledby="values-title">
         <div className="container-x">
-          <SectionHeading id="values-title" align="center" eyebrow="What we stand for" title="Our values" />
+          <SectionHeading id="values-title" align="center" title="Our values" />
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {VALUES.map(({ icon: Icon, title, text }) => (
               <div key={title} className="bg-surface p-8 ring-1 ring-line transition hover:-translate-y-1 hover:shadow-xl">
