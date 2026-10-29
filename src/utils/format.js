@@ -24,15 +24,3 @@ export const cartTotals = (items) => {
   const tax = subtotal * 0.08
   return { count, subtotal, shipping, tax, total: subtotal + tax + shipping }
 }
-
-export function goToShop(navigate, pathname) {
-  const scroll = () =>
-    document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-
-  if (pathname !== '/') {
-    navigate('/')
-    setTimeout(scroll, 80)
-  } else {
-    scroll()
-  }
-}

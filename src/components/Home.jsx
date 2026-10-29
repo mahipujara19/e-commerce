@@ -7,10 +7,9 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined'
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
 import { useDispatch, useSelector } from 'react-redux'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { setCategory } from '../toolkit/searchSlice'
 import { LUXURY_CATEGORIES, SIGNATURE_CATEGORIES, formatCategory, money } from '../utils/format'
-import Product from './Product'
 import ProductCard, { ProductCardSkeleton } from './ProductCard'
 import SectionHeading from './SectionHeading'
 
@@ -24,24 +23,9 @@ const PERKS = [
   { icon: SupportAgentOutlinedIcon, title: 'Concierge support', text: 'Here for you 7 days a week' },
 ]
 
-const scrollToShop = () => {
-  const shopSection = document.getElementById('shop')
-  if (!shopSection) {
-    if (window.location.hash !== '#shop') {
-      window.history.replaceState(null, '', '#shop')
-    }
-    return
-  }
-
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  shopSection.scrollIntoView({
-    behavior: prefersReducedMotion ? 'auto' : 'smooth',
-    block: 'start',
-  })
-}
-
 function Home() {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const { items: products, status } = useSelector((state) => state.products)
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
@@ -111,7 +95,7 @@ function Home() {
 
   const handleCategory = (name) => {
     dispatch(setCategory(name))
-    scrollToShop()
+    navigate('/shop')
   }
 
   return (
@@ -128,16 +112,9 @@ function Home() {
               Fine jewellery, refined timepieces and signature fragrance — curated for those who buy less, but better.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:gap-4 md:max-w-xs md:flex-col md:gap-3 lg:max-w-none lg:flex-row lg:gap-4">
-              <a
-                href="#shop"
-                onClick={(event) => {
-                  event.preventDefault()
-                  scrollToShop()
-                }}
-                className="btn-primary w-full sm:w-auto md:w-full lg:w-auto"
-              >
+              <Link to="/shop" className="btn-primary w-full sm:w-auto md:w-full lg:w-auto">
                 Shop the collection <ArrowForwardRoundedIcon sx={{ fontSize: 18 }} />
-              </a>
+              </Link>
               <Link to="/about" className="btn-outline w-full sm:w-auto md:w-full lg:w-auto">
                 Our story
               </Link>
@@ -248,9 +225,9 @@ function Home() {
             id="categories-title"
             title="Shop by category"
             action={
-              <a href="#shop" className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] hover:text-gold">
+              <Link to="/shop" className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] hover:text-gold">
                 View everything <ArrowForwardRoundedIcon sx={{ fontSize: 16 }} />
-              </a>
+              </Link>
             }
           />
           <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 md:mt-12 md:grid-cols-3 lg:grid-cols-6 lg:gap-5">
@@ -333,17 +310,14 @@ function Home() {
                 <Link to={`/productitem/${saleProduct.id}`} className="btn-light">
                   Shop this piece
                 </Link>
-                <a href="#shop" className="text-[12px] font-semibold uppercase tracking-[0.18em] text-cream/80 underline-offset-8 hover:text-cream hover:underline">
+                <Link to="/shop" className="text-[12px] font-semibold uppercase tracking-[0.18em] text-cream/80 underline-offset-8 hover:text-cream hover:underline">
                   Browse all
-                </a>
+                </Link>
               </div>
             </div>
           </div>
         </section>
       )}
-
-      {/* Full catalogue */}
-      <Product />
 
       {/* Testimonials */}
       {testimonials.length > 0 && (

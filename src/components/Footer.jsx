@@ -1,5 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { goToShop } from '../utils/format'
+import { Link } from 'react-router-dom'
 
 const YEAR = new Date().getFullYear()
 
@@ -15,9 +14,6 @@ function FooterColumn({ title, children, className = '' }) {
 }
 
 function Footer() {
-  const navigate = useNavigate()
-  const { pathname } = useLocation()
-
   return (
     <footer className="bg-night text-cream">
       <div className="container-x grid grid-cols-2 gap-x-6 gap-y-10 py-14 md:gap-12 md:py-16 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:py-20">
@@ -40,9 +36,7 @@ function Footer() {
 
         <FooterColumn title="Shop">
           <li>
-            <button type="button" onClick={() => goToShop(navigate, pathname)} className={linkClass}>
-              Shop all
-            </button>
+            <Link to="/shop" className={linkClass}>Shop all</Link>
           </li>
           <li><Link to="/cart" className={linkClass}>Your bag</Link></li>
           <li><Link to="/checkout" className={linkClass}>Checkout</Link></li>

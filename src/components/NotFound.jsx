@@ -1,10 +1,6 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { goToShop } from '../utils/format'
+import { Link } from 'react-router-dom'
 
 function NotFound() {
-  const navigate = useNavigate()
-  const { pathname } = useLocation()
-
   return (
     <section className="container-x grid min-h-[70vh] place-items-center py-24 text-center" aria-labelledby="not-found-title">
       <div className="max-w-lg animate-fade-up">
@@ -19,9 +15,7 @@ function NotFound() {
         </p>
         <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
           <Link to="/" className="btn-primary">Back to home</Link>
-          <button type="button" onClick={() => goToShop(navigate, pathname)} className="btn-outline">
-            Browse the collection
-          </button>
+          <Link to="/shop" className="btn-outline">Browse the collection</Link>
         </div>
       </div>
     </section>

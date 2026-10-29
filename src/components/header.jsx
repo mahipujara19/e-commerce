@@ -8,11 +8,10 @@ import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
 import { useDispatch, useSelector } from 'react-redux'
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { setSearchQuery } from '../toolkit/searchSlice'
 import { logout } from '../toolkit/authSlice'
 import { openCart, toggleTheme } from '../toolkit/uiSlice'
-import { goToShop } from '../utils/format'
 
 const navLinkClass = (isActive) =>
   `relative py-2 text-[12px] font-semibold uppercase tracking-[0.18em] transition-colors hover:text-gold after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:bg-current after:transition-transform after:duration-300 ${
@@ -31,7 +30,6 @@ function Logo({ className = '' }) {
 function Header() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { pathname } = useLocation()
   const itemCount = useSelector((state) =>
     state.cart.items.reduce((total, item) => total + (item.quantity ?? 1), 0),
   )
@@ -44,15 +42,10 @@ function Header() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [accountAnchor, setAccountAnchor] = useState(null)
 
-  const handleShop = () => {
-    setMenuOpen(false)
-    goToShop(navigate, pathname)
-  }
-
   const handleSearchSubmit = (event) => {
     event.preventDefault()
     setSearchOpen(false)
-    goToShop(navigate, pathname)
+    navigate('/shop')
   }
 
   const handleAccountNavigate = (to) => {
@@ -88,9 +81,9 @@ function Header() {
               <NavLink to="/" end className={({ isActive }) => navLinkClass(isActive)}>
                 Home
               </NavLink>
-              <button type="button" onClick={handleShop} className={navLinkClass(false)}>
+              <NavLink to="/shop" className={({ isActive }) => navLinkClass(isActive)}>
                 Shop
-              </button>
+              </NavLink>
               <NavLink to="/about" className={({ isActive }) => navLinkClass(isActive)}>
                 About
               </NavLink>
@@ -210,6 +203,7 @@ function Header() {
           <nav className="mt-12 flex flex-col gap-1" aria-label="Mobile navigation">
             {[
               { to: '/', label: 'Home' },
+              { to: '/shop', label: 'Shop all' },
               { to: '/about', label: 'Our story' },
               { to: '/cart', label: 'Your bag' },
             ].map((link) => (
@@ -225,9 +219,6 @@ function Header() {
                 {link.label}
               </NavLink>
             ))}
-            <button type="button" onClick={handleShop} className="border-b border-line py-4 text-left font-display text-3xl transition-colors hover:text-gold">
-              Shop all
-            </button>
           </nav>
 
           <div className="mt-auto space-y-3 pt-10">
