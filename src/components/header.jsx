@@ -7,6 +7,7 @@ import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
+import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { setSearchQuery } from '../toolkit/searchSlice'
@@ -37,6 +38,7 @@ function Header() {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
   const user = useSelector((state) => state.auth.user)
   const theme = useSelector((state) => state.ui.theme)
+  const wishlistCount = useSelector((state) => state.wishlist.ids.length)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -137,6 +139,9 @@ function Header() {
                     <p className="mt-1 truncate text-sm font-medium">{user?.email}</p>
                   </div>
                   <Divider />
+                  <MenuItem onClick={() => handleAccountNavigate('/account')}>Your account</MenuItem>
+                  <MenuItem onClick={() => handleAccountNavigate('/account?tab=orders')}>Orders</MenuItem>
+                  <MenuItem onClick={() => handleAccountNavigate('/wishlist')}>Wishlist</MenuItem>
                   <MenuItem onClick={() => handleAccountNavigate('/cart')}>Your bag</MenuItem>
                   <MenuItem onClick={() => handleAccountNavigate('/checkout')}>Checkout</MenuItem>
                   <Divider />
@@ -146,6 +151,14 @@ function Header() {
             ) : (
               <IconButton component={Link} to="/login" aria-label="Sign in" className="hidden sm:inline-flex">
                 <PersonOutlineRoundedIcon />
+              </IconButton>
+            )}
+
+            {isAuthenticated && (
+              <IconButton component={Link} to="/wishlist" aria-label={`Wishlist, ${wishlistCount} saved`} className="hidden sm:inline-flex">
+                <Badge badgeContent={wishlistCount} color="primary" max={99}>
+                  <FavoriteBorderRoundedIcon />
+                </Badge>
               </IconButton>
             )}
 
@@ -206,6 +219,12 @@ function Header() {
               { to: '/shop', label: 'Shop all' },
               { to: '/about', label: 'Our story' },
               { to: '/cart', label: 'Your bag' },
+              ...(isAuthenticated
+                ? [
+                    { to: '/wishlist', label: 'Wishlist' },
+                    { to: '/account', label: 'Your account' },
+                  ]
+                : []),
             ].map((link) => (
               <NavLink
                 key={link.to}

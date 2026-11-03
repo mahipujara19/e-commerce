@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Rating } from '@mui/material'
+import SearchOffRoundedIcon from '@mui/icons-material/SearchOffRounded'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded'
@@ -13,7 +14,10 @@ import { addItem } from '../toolkit/slice'
 import { fetchproduct } from '../toolkit/productslice'
 import { openCart } from '../toolkit/uiSlice'
 import { formatCategory, money, originalPrice } from '../utils/format'
+import useWishlist from '../hooks/useWishlist'
+import EmptyState from './EmptyState'
 import ProductCard from './ProductCard'
+import ProductReviews from './ProductReviews'
 import QuantityControl from './QuantityControl'
 import SectionHeading from './SectionHeading'
 
@@ -27,7 +31,7 @@ function ProductItem({ id }) {
   const dispatch = useDispatch()
   const [quantity, setQuantity] = useState(1)
   const [imageIndex, setImageIndex] = useState(0)
-  const [liked, setLiked] = useState(false)
+  const { saved: liked, toggle: toggleLiked } = useWishlist(id)
   const { items: products, status, error } = useSelector((state) => state.products)
   const cartItems = useSelector((state) => state.cart.items)
   const product = products.find((item) => item.id === id)
@@ -71,9 +75,14 @@ function ProductItem({ id }) {
 
   if (!product) {
     return (
-      <div className="container-x py-28 text-center">
-        <h1 className="font-display text-4xl">This piece could not be found</h1>
-        <Link to="/" className="btn-primary mt-10">Back to the collection</Link>
+      <div className="container-x">
+        <EmptyState
+          icon={SearchOffRoundedIcon}
+          titleAs="h1"
+          title="This piece could not be found"
+          description="It may have sold out for good or been removed from the collection."
+          action={<Link to="/shop" className="btn-primary">Back to the collection</Link>}
+        />
       </div>
     )
   }
@@ -205,7 +214,7 @@ function ProductItem({ id }) {
             </button>
             <button
               type="button"
-              onClick={() => setLiked((value) => !value)}
+              onClick={toggleLiked}
               aria-pressed={liked}
               aria-label={liked ? 'Remove from wishlist' : 'Save to wishlist'}
               className="grid h-12 w-12 place-items-center border border-line bg-surface transition hover:border-ink md:ml-auto xl:ml-0"
@@ -254,27 +263,7 @@ function ProductItem({ id }) {
         </div>
       </section>
 
-      {product.reviews?.length > 0 && (
-        <section id="reviews" className="mt-16 scroll-mt-28 md:mt-24" aria-labelledby="product-reviews-title">
-          <SectionHeading
-            id="product-reviews-title"
-            title={`${product.rating.toFixed(1)} out of 5`}
-            description={`Based on ${product.reviews.length} verified ${product.reviews.length === 1 ? 'review' : 'reviews'}.`}
-          />
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
-            {product.reviews.map((review) => (
-              <figure key={`${review.reviewerName}-${review.date}`} className="bg-surface p-7 ring-1 ring-line">
-                <Rating value={review.rating} readOnly size="small" />
-                <blockquote className="mt-4 font-display text-xl leading-snug">“{review.comment}”</blockquote>
-                <figcaption className="mt-6 text-sm">
-                  <span className="font-semibold">{review.reviewerName}</span>
-                  <span className="text-stone"> · {new Date(review.date).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </section>
-      )}
+      <ProductReviews product={product} />
 
       {related.length > 0 && (
         <section className="mt-16 md:mt-24" aria-labelledby="related-title">
@@ -292,7 +281,7 @@ function ProductItem({ id }) {
 
 function ProductItemPage() {
   const { id } = useParams()
-  return <ProductItem key={id} id={Number(id)} />
+  return <ProductItem key={id} id={id} />
 }
 
 export default ProductItemPage

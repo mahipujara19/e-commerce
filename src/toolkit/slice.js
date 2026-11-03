@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
-import { login, logout, signup } from './authSlice.js'
+import { login, logout, sessionExpired, signup } from './authSlice.js'
 
 const getCartKey = (email) => `cart:${email.trim().toLowerCase()}`
 
@@ -7,7 +7,8 @@ const loadCart = (key) => {
   try {
     const savedCart = localStorage.getItem(key)
     const items = savedCart ? JSON.parse(savedCart) : []
-    return Array.isArray(items) ? items : []
+    // Numeric ids are left over from the old DummyJSON catalog and cannot be ordered.
+    return Array.isArray(items) ? items.filter((item) => typeof item.id === 'string') : []
   } catch {
     return []
   }
@@ -85,20 +86,23 @@ const cartSlice = createSlice({
       state.items = loadCart(state.storageKey)
     }
 
+    const unloadUserCart = (state) => {
+      if (state.storageKey) {
+        saveCart(state.storageKey, state.items)
+      }
+      state.storageKey = null
+      state.items = []
+    }
+
     builder
-      .addCase(login, (state, action) => {
+      .addCase(login.fulfilled, (state, action) => {
         loadUserCart(state, action.payload.email)
       })
-      .addCase(signup, (state, action) => {
+      .addCase(signup.fulfilled, (state, action) => {
         loadUserCart(state, action.payload.email)
       })
-      .addCase(logout, (state) => {
-        if (state.storageKey) {
-          saveCart(state.storageKey, state.items)
-        }
-        state.storageKey = null
-        state.items = []
-      })
+      .addCase(logout.fulfilled, unloadUserCart)
+      .addCase(sessionExpired, unloadUserCart)
   },
 })
 

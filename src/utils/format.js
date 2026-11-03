@@ -17,7 +17,18 @@ export const money = (value) => `$${Number(value).toFixed(2)}`
 export const originalPrice = (product) =>
   product.discountPercentage > 0 ? product.price / (1 - product.discountPercentage / 100) : null
 
-export const cartTotals = (items) => {
+export const ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
+
+export const LOW_STOCK_THRESHOLD = 10
+
+export const stockLevel = (stock) => (stock === 0 ? 'out' : stock <= LOW_STOCK_THRESHOLD ? 'low' : 'ok')
+
+export const orderNumber = (id) => `GT-${id.slice(-8).toUpperCase()}`
+
+export const formatDate = (value, options = { day: 'numeric', month: 'short', year: 'numeric' }) =>
+  new Date(value).toLocaleDateString(undefined, options)
+
+export const cartTotals =(items) => {
   const count = items.reduce((total, item) => total + (item.quantity ?? 1), 0)
   const subtotal = items.reduce((total, item) => total + item.price * (item.quantity ?? 1), 0)
   const shipping = subtotal >= FREE_SHIPPING_MINIMUM || subtotal === 0 ? 0 : 5.99

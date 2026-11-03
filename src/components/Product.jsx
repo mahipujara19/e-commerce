@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Alert } from '@mui/material'
+import SearchOffRoundedIcon from '@mui/icons-material/SearchOffRounded'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchproduct } from '../toolkit/productslice'
 import { setCategory, setSearchQuery } from '../toolkit/searchSlice'
 import { featuredRank, formatCategory } from '../utils/format'
+import EmptyState from './EmptyState'
 import ProductCard, { ProductCardSkeleton } from './ProductCard'
 import SectionHeading from './SectionHeading'
 
@@ -130,15 +132,18 @@ function Product() {
         )}
 
         {status === 'succeeded' && filteredProducts.length === 0 && (
-          <div className="mt-12 bg-surface px-6 py-20 text-center ring-1 ring-line">
-            <p className="font-display text-3xl">Nothing found</p>
-            <p className="mt-3 text-stone">
-              No pieces match{searchQuery ? ` “${searchQuery}”` : ''}
-              {activeCategory ? ` in ${formatCategory(activeCategory)}` : ''}.
-            </p>
-            <button type="button" onClick={clearFilters} className="btn-outline mt-8">
-              Clear all filters
-            </button>
+          <div className="mt-12 bg-surface ring-1 ring-line">
+            <EmptyState
+              compact
+              icon={SearchOffRoundedIcon}
+              title="Nothing found"
+              description={`No pieces match${searchQuery ? ` “${searchQuery}”` : ''}${activeCategory ? ` in ${formatCategory(activeCategory)}` : ''}.`}
+              action={
+                <button type="button" onClick={clearFilters} className="btn-outline">
+                  Clear all filters
+                </button>
+              }
+            />
           </div>
         )}
 

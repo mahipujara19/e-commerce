@@ -6,15 +6,12 @@ import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded'
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
-import { login, loadRegisteredUsers } from '../toolkit/authSlice'
+import { login } from '../toolkit/authSlice'
 import AuthLayout, { FormDivider } from './AuthLayout'
 
 const loginSchema = Yup.object({
   email: Yup.string().email('Please enter a valid email address').required('Email is required'),
-  password: Yup.string().min(8, 'Password must be at least 8 characters')
-    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .matches(/[0-9]/, 'Password must contain at least one number')
-    .matches(/[!@#$%^&*]/, 'Password must contain at least one special character (!@#$%^&*)')
+  password: Yup.string().min(3, 'Password must be at least 3 characters')
     .required('Password is required'),
 })
 
@@ -31,25 +28,13 @@ function LoginForm() {
     validationSchema: loginSchema,
     onSubmit: async (values) => {
       setLoginError('')
-      await new Promise((resolve) => setTimeout(resolve, 800))
 
       try {
-        const normalizedEmail = values.email.trim().toLowerCase()
-        const matchedUser = loadRegisteredUsers().find((user) => String(user.email).trim().toLowerCase() === normalizedEmail)
-
-        if (!matchedUser) {
-          setLoginError('No account found with this email. Please create one first.')
-          return
-        }
-        if (String(matchedUser.password) !== String(values.password)) {
-          setLoginError('Incorrect password. Please try again.')
-          return
-        }
-
-        dispatch(login(matchedUser))
-        navigate(from, { replace: true })
-      } catch {
-        setLoginError('Something went wrong. Please try again.')
+        const user = await dispatch(login({ email: values.email.trim(), password: values.password })).unwrap()
+        // Admins only use the management area, whatever page they were heading to.
+        navigate(user.role === 'admin' ? '/admin' : from, { replace: true })
+      } catch (message) {
+        setLoginError(message || 'Something went wrong. Please try again.')
       }
     },
   })
@@ -101,6 +86,15 @@ function LoginForm() {
             },
           }}
         />
+
+        <div className="-mt-1 text-right">
+          <Link
+            to="/forgot-password"
+            className="text-[11px] font-semibold uppercase tracking-[0.16em] text-stone underline-offset-4 hover:text-ink hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
 
         {loginError && <Alert severity="error">{loginError}</Alert>}
 

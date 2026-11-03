@@ -57,6 +57,7 @@ function PasswordToggle({ visible, onToggle }) {
 
 function SignupForm() {
   const [submitted, setSubmitted] = useState(false)
+  const [signupError, setSignupError] = useState('')
   const [captchaToken, setCaptchaToken] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -93,20 +94,23 @@ function SignupForm() {
         return
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      setSignupError('')
 
-      dispatch(
-        signup({
-          firstName: values.firstName,
-          lastName: values.lastName,
-          email: values.email,
-          phone: values.phone,
-          password: values.password,
-        }),
-      )
-
-      setSubmitted(true)
-      setSubmitting(false)
+      try {
+        await dispatch(
+          signup({
+            name: `${values.firstName.trim()} ${values.lastName.trim()}`,
+            email: values.email.trim(),
+            phone: values.phone,
+            password: values.password,
+          }),
+        ).unwrap()
+        setSubmitted(true)
+      } catch (message) {
+        setSignupError(message || 'Something went wrong. Please try again.')
+      } finally {
+        setSubmitting(false)
+      }
     },
   })
 
@@ -139,6 +143,12 @@ function SignupForm() {
               ? 'Your bag and orders are now saved to your account.'
               : 'You are already signed in and ready to shop.'}
           </p>
+          {justJoined && (
+            <p className="mt-6 bg-sand px-5 py-4 text-sm leading-relaxed">
+              We&apos;ve sent a verification link to <strong>{user?.email ?? formik.values.email}</strong>. Please confirm
+              your email to start writing reviews.
+            </p>
+          )}
           <button
             type="button"
             onClick={() => navigate(justJoined ? from : '/', { replace: justJoined })}
@@ -239,6 +249,8 @@ function SignupForm() {
             <Alert severity="warning" className="w-full">Please complete the reCAPTCHA verification.</Alert>
           )}
         </div>
+
+        {signupError && <Alert severity="error">{signupError}</Alert>}
 
         <button type="submit" disabled={formik.isSubmitting || !captchaToken} className="btn-primary h-14 w-full">
           {formik.isSubmitting ? <CircularProgress size={20} color="inherit" /> : 'Create account'}

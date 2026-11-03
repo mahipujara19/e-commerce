@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Rating } from '@mui/material'
 import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded'
 import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded'
@@ -8,10 +7,11 @@ import { Link } from 'react-router-dom'
 import { addItem } from '../toolkit/slice'
 import { openCart } from '../toolkit/uiSlice'
 import { formatCategory, money, originalPrice } from '../utils/format'
+import useWishlist from '../hooks/useWishlist'
 
 function ProductCard({ product }) {
   const dispatch = useDispatch()
-  const [liked, setLiked] = useState(false)
+  const { saved: liked, toggle: toggleLiked } = useWishlist(product.id)
   const inBag = useSelector((state) => state.cart.items.find((item) => item.id === product.id)?.quantity ?? 0)
   const discount = Math.round(product.discountPercentage ?? 0)
   const original = originalPrice(product)
@@ -43,7 +43,7 @@ function ProductCard({ product }) {
 
         <button
           type="button"
-          onClick={() => setLiked((value) => !value)}
+          onClick={toggleLiked}
           aria-pressed={liked}
           aria-label={`${liked ? 'Remove' : 'Save'} ${product.title} ${liked ? 'from' : 'to'} wishlist`}
           className="absolute right-2.5 top-2.5 grid h-9 w-9 place-items-center rounded-full bg-surface/90 text-ink shadow-sm transition hover:bg-surface sm:right-3 sm:top-3"

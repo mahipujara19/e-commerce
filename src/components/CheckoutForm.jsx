@@ -8,8 +8,11 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import MyLocationRoundedIcon from '@mui/icons-material/MyLocationRounded'
 import { Link, Navigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
+import { fetchproduct } from '../toolkit/productslice'
 import { clearItem } from '../toolkit/slice'
-import { cartTotals, money } from '../utils/format'
+import { notify } from '../toolkit/toastSlice'
+import { api } from '../utils/api'
+import { cartTotals, money, orderNumber as formatOrderNumber } from '../utils/format'
 
 const checkoutSchema = Yup.object({
   fullName: Yup.string().min(2, 'Name must be at least 2 characters').required('Full name is required'),
@@ -102,6 +105,7 @@ function CheckoutForm() {
   const dispatch = useDispatch()
   const [submitted, setSubmitted] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
+  const [orderError, setOrderError] = useState('')
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
   const user = useSelector((state) => state.auth.user)
   const cartItems = useSelector((state) => state.cart.items)
@@ -137,12 +141,36 @@ function CheckoutForm() {
         return
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      setOrderError('')
 
-      setOrderNumber(`GT-${Date.now().toString().slice(-6)}`)
-      dispatch(clearItem())
-      setSubmitted(true)
-      setSubmitting(false)
+      try {
+        // Only ids and quantities are sent: the server sets prices and totals. Card details never leave this form.
+        const order = await api('/orders', {
+          method: 'POST',
+          body: {
+            items: cartItems.map((item) => ({ product: item.id, quantity: item.quantity ?? 1 })),
+            shippingAddress: {
+              fullName: values.fullName,
+              email: values.email,
+              address: values.address,
+              city: values.city,
+              state: values.state,
+              zipCode: values.zipCode,
+              country: values.country,
+            },
+          },
+        })
+
+        setOrderNumber(formatOrderNumber(order.id))
+        dispatch(notify(`Order ${formatOrderNumber(order.id)} placed — thank you`))
+        dispatch(clearItem())
+        dispatch(fetchproduct({ force: true }))
+        setSubmitted(true)
+      } catch (error) {
+        setOrderError(error.message)
+      } finally {
+        setSubmitting(false)
+      }
     },
   })
 
@@ -271,8 +299,9 @@ function CheckoutForm() {
               Order number <strong className="ml-2 font-mono tracking-wider">{orderNumber}</strong>
             </p>
           )}
-          <div className="mt-10">
+          <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
             <Link to="/" className="btn-primary">Continue shopping</Link>
+            <Link to="/account?tab=orders" className="btn-outline">View your orders</Link>
           </div>
         </div>
       </div>
@@ -395,6 +424,8 @@ function CheckoutForm() {
               onChange={formik.handleChange}
             />
           </div>
+
+          {orderError && <Alert severity="error">{orderError}</Alert>}
 
           <button type="submit" disabled={formik.isSubmitting} className="btn-primary h-16 w-full text-[13px]">
             {formik.isSubmitting ? (

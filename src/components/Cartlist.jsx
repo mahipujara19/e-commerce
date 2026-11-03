@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { changeQuantity, removeItem } from '../toolkit/slice'
 import { cartTotals, formatCategory, money } from '../utils/format'
+import EmptyState from './EmptyState'
 import FreeShippingMeter from './FreeShippingMeter'
 import QuantityControl from './QuantityControl'
 
@@ -18,13 +19,14 @@ function Cartlist() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="container-x py-24 text-center md:py-32">
-        <span className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-sand text-gold">
-          <ShoppingBagOutlinedIcon sx={{ fontSize: 36 }} />
-        </span>
-        <h1 className="mt-8 font-display text-4xl md:text-5xl">Your bag is empty</h1>
-        <p className="mx-auto mt-4 max-w-sm text-stone">Discover pieces made to be kept — they&apos;ll wait for you here.</p>
-        <Link to="/" className="btn-primary mt-10">Discover the collection</Link>
+      <div className="container-x">
+        <EmptyState
+          icon={ShoppingBagOutlinedIcon}
+          titleAs="h1"
+          title="Your bag is empty"
+          description="Discover pieces made to be kept — they'll wait for you here."
+          action={<Link to="/" className="btn-primary">Discover the collection</Link>}
+        />
       </div>
     )
   }
