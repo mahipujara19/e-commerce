@@ -4,13 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "server": "nodemon server/index.js",
-    "client": "vite",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "seed": "node server/seed.js",
-    "build": "vite build",
+    "server": "nodemon backend/index.js",
+    "client": "vite frontend",
+    "dev": "concurrently -n api,web -c yellow,cyan \"npm run server\" \"npm run client\"",
+    "start": "node backend/index.js",
+    "seed": "node backend/seed.js",
+    "user:create": "node backend/scripts/createUser.js",
+    "build": "vite build frontend",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview frontend"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

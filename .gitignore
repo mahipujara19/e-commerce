@@ -25,7 +25,7 @@ coverage
 Thumbs.db
 Desktop.ini
 *.tsbuildinfo
-
+prompt.txt
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

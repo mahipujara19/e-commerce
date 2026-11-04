@@ -1,5 +1,5 @@
 {
-  "watch": ["server", ".env"],
+  "watch": ["backend", ".env"],
   "ext": "js,json",
-  "ignore": ["server/data/*"]
+  "ignore": ["backend/data/*"]
 }
