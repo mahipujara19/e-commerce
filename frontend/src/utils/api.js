@@ -32,10 +32,12 @@ export const setSessionExpiredHandler = (handler) => {
 }
 
 export class ApiRequestError extends Error {
-  constructor(status, message, code) {
+  constructor(status, message, code, retryAfterSeconds) {
     super(message)
     this.status = status
     this.code = code
+    // Set on 429 responses from rate-limited endpoints.
+    this.retryAfterSeconds = retryAfterSeconds
   }
 }
 
@@ -61,6 +63,7 @@ const request = async (path, { method = 'GET', body, headers: extra } = {}) => {
       response.status,
       result?.message ?? 'The server is unavailable. Please try again shortly.',
       result?.data?.code,
+      result?.data?.retryAfterSeconds,
     )
   }
   return result.data

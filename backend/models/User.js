@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 import { DEFAULT_ROLE, ROLES } from '../config/roles.js'
 import { jsonOptions } from '../utils/jsonTransform.js'
 
-const SALT_ROUNDS = 12
+export const SALT_ROUNDS = 12
 
 // One entry per signed-in device. Only SHA-256 hashes are stored, never the refresh tokens themselves.
 // previousHash lets a tab that raced another tab's refresh still succeed for a few seconds after rotation.
@@ -32,6 +32,8 @@ const userSchema = new mongoose.Schema(
     emailVerificationExpires: { type: Date, select: false },
     // When the last verification email went out, so resends can be rate limited.
     emailVerificationSentAt: { type: Date, select: false },
+    // Set after repeated failed sign-ins; login is refused until it passes (see config/security.js).
+    lockUntil: { type: Date, select: false },
     passwordResetToken: { type: String, select: false, index: true },
     passwordResetExpires: { type: Date, select: false },
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
@@ -44,6 +46,7 @@ const userSchema = new mongoose.Schema(
       'emailVerificationToken',
       'emailVerificationExpires',
       'emailVerificationSentAt',
+      'lockUntil',
       'passwordResetToken',
       'passwordResetExpires',
       'wishlist',

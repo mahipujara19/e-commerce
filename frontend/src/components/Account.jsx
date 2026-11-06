@@ -60,7 +60,7 @@ function VerificationCard({ user }) {
       dispatch(notify('A new verification link is on its way to your inbox'))
     } catch (requestError) {
       setError(requestError.message)
-      if (requestError.status === 429) setCooldown(Number(requestError.message.match(/\d+/)?.[0]) || RESEND_COOLDOWN_SECONDS)
+      if (requestError.status === 429) setCooldown(requestError.retryAfterSeconds || RESEND_COOLDOWN_SECONDS)
     } finally {
       setSending(false)
     }
@@ -87,7 +87,7 @@ function VerificationCard({ user }) {
       )}
       {error && <Alert severity="error" className="mt-3">{error}</Alert>}
       <button type="button" onClick={resend} disabled={sending || cooldown > 0} className="btn-outline mt-4 w-full !py-3">
-        {sending ? <CircularProgress size={16} color="inherit" /> : cooldown > 0 ? `Resend available in ${cooldown}s` : 'Resend link'}
+        {sending ? <CircularProgress size={16} color="inherit" /> : cooldown > 0 ? `Resend available in ${cooldown > 90 ? `${Math.ceil(cooldown / 60)} min` : `${cooldown}s`}` : 'Resend link'}
       </button>
     </div>
   )

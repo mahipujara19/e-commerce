@@ -13,7 +13,9 @@ import {
   updateUserRole,
 } from '../controllers/userController.js'
 import { adminOnly, protect, staffOnly } from '../middleware/authMiddleware.js'
+import { byIp, byUser, limitRequests } from '../middleware/rateLimit.js'
 import { validate } from '../middleware/validate.js'
+import { limiters } from '../utils/limiters.js'
 import { emailRule, nameRule, passwordRule, phoneRule } from './authRoutes.js'
 
 const router = Router()
@@ -32,7 +34,14 @@ router
 router.patch('/:id/role', adminOnly, [param('id').isMongoId().withMessage('Invalid user id'), roleRule()], validate, updateUserRole)
 
 router.route('/me').get(getProfile).put([nameRule(), phoneRule()], validate, updateProfile)
-router.post('/me/verification', resendVerification)
+// On top of the one-minute cooldown in the controller: caps emails per account and per IP over an hour.
+const RESEND_LIMIT_MESSAGE = 'Too many verification emails requested. Please try again later.'
+router.post(
+  '/me/verification',
+  limitRequests({ limiter: limiters.resendVerificationIp, key: byIp, name: 'resendVerificationIp', message: RESEND_LIMIT_MESSAGE }),
+  limitRequests({ limiter: limiters.resendVerificationUser, key: byUser, name: 'resendVerificationUser', message: RESEND_LIMIT_MESSAGE }),
+  resendVerification,
+)
 
 router.get('/me/wishlist', getWishlist)
 router

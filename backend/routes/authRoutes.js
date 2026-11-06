@@ -9,7 +9,9 @@ import {
   signup,
   verifyEmail,
 } from '../controllers/authController.js'
+import { byIp, limitRequests } from '../middleware/rateLimit.js'
 import { validate } from '../middleware/validate.js'
+import { limiters } from '../utils/limiters.js'
 
 const router = Router()
 
@@ -53,11 +55,27 @@ const loginRules = [
 ]
 
 router.post('/signup', signupRules, validate, signup)
+// Failed logins are limited per IP and per email inside the controller, since only failures count.
 router.post('/login', loginRules, validate, login)
 router.post('/refresh', refresh)
 router.post('/logout', logout)
 router.post('/verify-email', tokenRule(), validate, verifyEmail)
-router.post('/forgot-password', emailRule(), validate, forgotPassword)
-router.post('/reset-password', [tokenRule(), passwordRule()], validate, resetPassword)
+const forgotPasswordIpLimit = limitRequests({
+  limiter: limiters.forgotPasswordIp,
+  key: byIp,
+  name: 'forgotPasswordIp',
+  message: 'Too many password reset requests. Please try again later.',
+})
+
+const resetPasswordIpLimit = limitRequests({
+  limiter: limiters.resetPasswordIp,
+  key: byIp,
+  name: 'resetPasswordIp',
+  message: 'Too many attempts. Please wait a few minutes and try again.',
+})
+
+// The per-email limit for forgot-password lives in the controller so it can answer without revealing anything.
+router.post('/forgot-password', forgotPasswordIpLimit, emailRule(), validate, forgotPassword)
+router.post('/reset-password', resetPasswordIpLimit, [tokenRule(), passwordRule()], validate, resetPassword)
 
 export default router

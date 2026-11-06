@@ -31,14 +31,14 @@ package.json           Scripts and dependencies for both apps
 nodemon.json           Restarts the API when backend/ or .env changes
 
 backend/
-  config/              Environment validation, MongoDB connection, role definitions
+  config/              Environment validation, MongoDB connection, roles, security thresholds
   controllers/         Request handlers
   data/                Catalog used by the seed script
-  middleware/          Authentication, roles, CSRF, validation, and error handling
-  models/              User, Product, and Order schemas
+  middleware/          Authentication, roles, CSRF, rate limiting, validation, and error handling
+  models/              User, Product, Order, and RateLimit schemas
   routes/              Route definitions and validation rules
   scripts/             Account management (createUser.js, upsertUser.js)
-  utils/               Tokens, email, stock notifications, migrations, responses, order totals
+  utils/               Tokens, email, rate limiters, security log, stock notifications, migrations, responses, order totals
   index.js             Express app
   seed.js              Account and catalog seeding
 
@@ -119,6 +119,40 @@ Accounts saved with the old `user` role are renamed to `customer` automatically 
 6. If the refresh token is expired or revoked, the session is cleared. Protected pages redirect to the login page, which explains that the session expired and returns the user to the page they were on after they sign in.
 
 Role-gated pages wait for the server to confirm the session before rendering, so a stale profile in `localStorage` never decides access.
+
+## Brute-force and abuse protection
+
+Thresholds live in `backend/config/security.js`.
+
+| Endpoint | Limit | When exceeded |
+| --- | --- | --- |
+| `POST /api/auth/login` | 5 failed attempts per 15 minutes per email | 429 and a 15-minute lockout of that email only. Other accounts, even on the same IP, are unaffected |
+| `POST /api/auth/login` | 50 failed attempts per 15 minutes per IP | 429 for every login from that IP until the window ends. This catches one machine guessing across many accounts. It is set high because people on one network share an IP |
+| `POST /api/auth/forgot-password` | 10 requests per hour per IP | 429 |
+| `POST /api/auth/forgot-password` | 3 emails per hour per address | Same success response, but no email is sent |
+| `POST /api/auth/reset-password` | 10 requests per 15 minutes per IP | 429 |
+| `POST /api/users/me/verification` | 5 per hour per account, 10 per hour per IP, plus a 1-minute cooldown | 429 |
+
+How login protection works:
+
+- **Only failures count.** A successful login clears the email's failure count and lockout. It does not clear the IP's count, so signing in to one account cannot reset an attacker's budget for guessing others.
+- **The lockout is checked before the password.** While an email is locked, even the correct password is refused. For real accounts, the lockout is also stored on the user (`lockUntil`). It expires on its own and is cleared by the next successful login or by a password reset.
+- **No account enumeration.** Unknown emails are counted, locked out, and answered exactly like real ones. Unknown emails are also checked against a dummy bcrypt hash, so they take as long as a wrong password. Forgot-password sends its email after responding, so known and unknown addresses respond equally fast. Login 429s carry no `Retry-After` header, because the timing could differ between accounts.
+- **Messages.** Wrong credentials return `Incorrect email or password`. A lockout returns `Too many failed attempts. Please try again later.` (`data.code: "LOGIN_BLOCKED"`). The other limits return 429 with `data.code: "RATE_LIMITED"`, `data.retryAfterSeconds`, and a `Retry-After` header.
+- **Shared storage.** Counters are stored in MongoDB (the `ratelimits` collection, with a TTL index), so limits hold across restarts and multiple API instances. Keys are SHA-256 hashes of the IP, email, or user id.
+- **IP addresses.** IPs come from `req.ip`, which uses `trust proxy` in production. IPv4-mapped addresses are treated as IPv4. IPv6 addresses are grouped by `/64`, because one user usually controls a whole `/64`. If you run behind more than one proxy, adjust `trust proxy` in `backend/index.js`. Otherwise every request appears to come from the proxy.
+- **Trade-off.** Anyone who knows an email can lock it out for 15 minutes by failing five times. The owner can still use "Forgot password", and a password reset lifts the lockout.
+
+Security events are logged as one JSON line each, prefixed with `[security]`:
+
+```text
+[security] {"time":"…","event":"login_failed","ip":"203.0.113.7","email":"jo@example.com","reason":"wrong_password","attempts":3}
+[security] {"time":"…","event":"account_locked","ip":"203.0.113.7","email":"jo@example.com","until":"…","knownAccount":true}
+[security] {"time":"…","event":"login_blocked","ip":"203.0.113.7","email":"jo@example.com","reason":"account_locked"}
+[security] {"time":"…","event":"rate_limited","limit":"forgotPasswordIp","ip":"203.0.113.7","path":"/api/auth/forgot-password"}
+```
+
+`reason` is one of `wrong_password`, `unknown_email`, `ip_rate_limited`, `account_rate_limited`, or `account_locked`. Passwords and tokens are never logged. Values are truncated, and JSON encoding prevents log injection.
 
 ## CSRF protection
 

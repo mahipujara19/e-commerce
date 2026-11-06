@@ -242,7 +242,7 @@ function AdminInventory() {
           icon={RemoveShoppingCartOutlinedIcon}
           label="Out of stock"
           value={summary.out}
-          note="Not purchasable"
+          note="Urgent Purchase"
           loading={loading}
           tone={summary.out > 0 ? 'alert' : undefined}
         />

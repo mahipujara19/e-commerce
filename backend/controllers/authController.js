@@ -1,6 +1,10 @@
+import { randomBytes } from 'node:crypto'
+import bcrypt from 'bcryptjs'
 import { env } from '../config/env.js'
-import User from '../models/User.js'
+import { LOGIN_POLICY } from '../config/security.js'
+import User, { SALT_ROUNDS } from '../models/User.js'
 import { ApiError, sendSuccess } from '../utils/apiResponse.js'
+import { clientIp } from '../utils/clientIp.js'
 import {
   ACCESS_TOKEN_MAX_AGE_MS,
   generateAccessToken,
@@ -10,6 +14,8 @@ import {
   REFRESH_TOKEN_MAX_AGE_MS,
   verifyRefreshToken,
 } from '../utils/generateTokens.js'
+import { limiters } from '../utils/limiters.js'
+import { logSecurityEvent } from '../utils/securityLog.js'
 import { EmailDeliveryError, sendPasswordResetEmail, sendVerificationEmail } from '../utils/sendEmail.js'
 
 const REFRESH_COOKIE = 'refreshToken'
@@ -90,7 +96,11 @@ export const resendVerificationEmail = async (user) => {
   const { emailVerificationSentAt: sentAt } = await User.findById(user._id).select('+emailVerificationSentAt').lean()
   const waitMs = sentAt ? VERIFICATION_RESEND_COOLDOWN_MS - (Date.now() - sentAt.getTime()) : 0
   if (waitMs > 0) {
-    throw new ApiError(429, `Please wait ${Math.ceil(waitMs / 1000)} seconds before requesting another link`)
+    const retryAfterSeconds = Math.ceil(waitMs / 1000)
+    throw new ApiError(429, `Please wait ${retryAfterSeconds} seconds before requesting another link`, {
+      code: 'RATE_LIMITED',
+      retryAfterSeconds,
+    })
   }
 
   try {
@@ -129,14 +139,70 @@ export const signup = async (req, res, next) => {
   }
 }
 
+const LOGIN_BLOCKED_MESSAGE = 'Too many failed attempts. Please try again later.'
+const LOGIN_FAILED_MESSAGE = 'Incorrect email or password'
+
+// Checked when the email is unknown, so a wrong email takes as long as a wrong password.
+const dummyHash = bcrypt.hash(randomBytes(32).toString('hex'), SALT_ROUNDS)
+
+const loginBlocked = () => new ApiError(429, LOGIN_BLOCKED_MESSAGE, { code: 'LOGIN_BLOCKED' })
+
+// Counts the failure per IP and per email. The email counter runs for unknown emails too, so known and unknown
+// addresses are locked out identically; for real accounts the lockout is also stored on the user.
+const recordLoginFailure = async ({ ip, email, user }) => {
+  const [, account] = await Promise.all([
+    limiters.loginIp.hit(ip),
+    limiters.loginAccount.hit(email, { blockMs: LOGIN_POLICY.lockoutMs }),
+  ])
+
+  logSecurityEvent('login_failed', { ip, email, reason: user ? 'wrong_password' : 'unknown_email', attempts: account.count })
+
+  if (account.count === LOGIN_POLICY.maxFailures) {
+    const lockUntil = new Date(Date.now() + LOGIN_POLICY.lockoutMs)
+    if (user) await User.updateOne({ _id: user._id }, { lockUntil })
+    logSecurityEvent('account_locked', { ip, email, until: lockUntil.toISOString(), knownAccount: Boolean(user) })
+  }
+}
+
+/**
+ * Order matters:
+ * 1. Refuse if this IP or this email has too many recent failures, or the account is locked,
+ *    before the password is looked at, so a locked account cannot be probed.
+ * 2. Check the password. Unknown emails are checked against a dummy hash so timing gives nothing away.
+ * 3. On success, clear the account's failure count and lock. The IP count is kept, so one valid login
+ *    cannot reset an attacker's budget for guessing other accounts.
+ */
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body
-    const user = await User.findOne({ email }).select('+password')
+    const ip = clientIp(req)
 
-    // Same message for both cases so the response does not reveal which emails are registered.
-    if (!user || !(await user.comparePassword(password))) {
-      throw new ApiError(401, 'Incorrect email or password')
+    const [ipState, accountState, user] = await Promise.all([
+      limiters.loginIp.check(ip),
+      limiters.loginAccount.check(email),
+      User.findOne({ email }).select('+password +lockUntil'),
+    ])
+
+    if (ipState.blocked) {
+      logSecurityEvent('login_blocked', { ip, email, reason: 'ip_rate_limited' })
+      throw loginBlocked()
+    }
+
+    // An expired lockUntil is simply ignored here and removed on the next successful sign-in.
+    const locked = user?.lockUntil > new Date()
+    if (accountState.blocked || locked) {
+      logSecurityEvent('login_blocked', { ip, email, reason: locked ? 'account_locked' : 'account_rate_limited' })
+      throw loginBlocked()
+    }
+
+    const valid = user ? await user.comparePassword(password) : (await bcrypt.compare(password, await dummyHash), false)
+    if (!valid) {
+      await recordLoginFailure({ ip, email, user })
+      throw new ApiError(401, LOGIN_FAILED_MESSAGE)
+    }
+
+    if (accountState.count || user.lockUntil) {
+      await Promise.all([limiters.loginAccount.reset(email), User.updateOne({ _id: user._id }, { $unset: { lockUntil: 1 } })])
     }
 
     const data = await startSession(res, user)
@@ -244,21 +310,32 @@ export const verifyEmail = async (req, res, next) => {
 
 const RESET_REQUESTED_MESSAGE = 'If an account exists for that email, a reset link is on its way'
 
+const sendResetLink = async (user) => {
+  const { token, hash } = generateEmailToken()
+  await User.updateOne(
+    { _id: user._id },
+    { passwordResetToken: hash, passwordResetExpires: new Date(Date.now() + RESET_TTL_MS) },
+  )
+  await sendPasswordResetEmail(user, token)
+}
+
+// The response is identical, and equally fast, whether or not the email is registered:
+// the link is sent after responding, and the per-email limit applies to unknown emails too.
 export const forgotPassword = async (req, res, next) => {
   try {
-    const user = await User.findOne({ email: req.body.email })
+    const { email } = req.body
 
-    // The response is the same either way so it does not reveal which emails are registered.
-    if (user) {
-      const { token, hash } = generateEmailToken()
-      await User.updateOne(
-        { _id: user._id },
-        { passwordResetToken: hash, passwordResetExpires: new Date(Date.now() + RESET_TTL_MS) },
-      )
-      await sendPasswordResetEmail(user, token).catch((error) => console.error(`[email] Reset email failed: ${error.message}`))
+    // Over the limit: answer as usual but send nothing, so one inbox cannot be flooded with reset emails.
+    const { exceeded } = await limiters.forgotPasswordEmail.hit(email)
+    if (exceeded) {
+      logSecurityEvent('rate_limited', { limit: 'forgotPasswordEmail', ip: clientIp(req), email })
+      return sendSuccess(res, { message: RESET_REQUESTED_MESSAGE })
     }
 
+    const user = await User.findOne({ email })
     sendSuccess(res, { message: RESET_REQUESTED_MESSAGE })
+
+    if (user) sendResetLink(user).catch((error) => console.error(`[email] Reset email failed: ${error.message}`))
   } catch (error) {
     next(error)
   }
@@ -279,7 +356,10 @@ export const resetPassword = async (req, res, next) => {
     user.passwordResetToken = undefined
     user.passwordResetExpires = undefined
     user.sessions = []
+    // Proving ownership of the email also lifts any sign-in lockout.
+    user.lockUntil = undefined
     await user.save()
+    await limiters.loginAccount.reset(user.email)
 
     sendSuccess(res, { message: 'Password updated. Please sign in with your new password.' })
   } catch (error) {
