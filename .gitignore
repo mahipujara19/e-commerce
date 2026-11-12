@@ -38,12 +38,11 @@ prompt.txt
 
 *.md
 !README.md
-!GO_LIVE_STEPS.md
 
 fixweb.txt
 e-com.txt
 
-# Browser tests (Playwright): not used for now. Files are kept locally, never committed.
+# Test output and Playwright files: testing is removed for now; these keep any future test files out of git.
 e2e/
 playwright.config.js
 test-results/

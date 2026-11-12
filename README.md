@@ -77,7 +77,6 @@ frontend/
 | `npm run build` | Build the frontend into `frontend/dist` |
 | `npm run preview` | Preview the production build locally |
 | `npm run lint` | Run Oxlint |
-| `npm test` | Unit tests and API integration tests (in-memory MongoDB, no setup needed) |
 
 ## Environment variables
 

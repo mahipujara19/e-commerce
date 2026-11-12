@@ -311,7 +311,7 @@ Open your site address and tick each one:
   ```
   Vercel publishes the new version by itself in 1–2 minutes.
 - **Changed a setting on Vercel?** Always **Redeploy** (Part 10.4).
-- **Before pushing code changes**, check nothing broke: `npm run lint`, `npm test`, `npm run build`.
+- **Before pushing code changes**, check nothing broke: `npm run lint`, `npm run build`.
 
 ---
 
