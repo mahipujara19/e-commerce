@@ -9,6 +9,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { dismissExpired, login } from '../toolkit/authSlice'
 import { isStaff } from '../utils/roles'
 import AuthLayout, { FormDivider } from './AuthLayout'
+import usePageMeta from '../hooks/usePageMeta'
 
 const loginSchema = Yup.object({
   email: Yup.string().email('Please enter a valid email address').required('Email is required'),
@@ -17,6 +18,7 @@ const loginSchema = Yup.object({
 })
 
 function LoginForm() {
+  usePageMeta({ title: 'Sign in', noindex: true })
   const [showPassword, setShowPassword] = useState(false)
   const [loginError, setLoginError] = useState('')
   const navigate = useNavigate()

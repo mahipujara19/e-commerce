@@ -53,9 +53,19 @@ const saveSession = (state) => {
 }
 
 // The API stores a single name; the UI greets users by first name.
-const toSessionUser = ({ id, name, email, phone, role, emailVerified, createdAt }) => {
+const toSessionUser = ({ id, name, email, phone, role, emailVerified, marketingOptIn, createdAt }) => {
   const [firstName, ...rest] = name.trim().split(/\s+/)
-  return { id, firstName, lastName: rest.join(' '), email, phone, role, emailVerified: Boolean(emailVerified), createdAt }
+  return {
+    id,
+    firstName,
+    lastName: rest.join(' '),
+    email,
+    phone,
+    role,
+    emailVerified: Boolean(emailVerified),
+    marketingOptIn: Boolean(marketingOptIn),
+    createdAt,
+  }
 }
 
 const startSession = ({ user, accessToken, accessTokenExpiresIn }) => {

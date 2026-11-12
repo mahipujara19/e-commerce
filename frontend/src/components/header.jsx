@@ -13,6 +13,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { setSearchQuery } from '../toolkit/searchSlice'
 import { logout } from '../toolkit/authSlice'
 import { openCart, toggleTheme } from '../toolkit/uiSlice'
+import { FREE_SHIPPING_MINIMUM, moneyShort } from '../utils/format'
 
 const navLinkClass = (isActive) =>
   `relative py-2 text-[12px] font-semibold uppercase tracking-[0.18em] transition-colors hover:text-gold after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:bg-current after:transition-transform after:duration-300 ${
@@ -67,7 +68,7 @@ function Header() {
   return (
     <>
       <div className="bg-night px-4 py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.22em] text-cream/90 sm:text-[11px]">
-        Complimentary shipping over $75
+        Complimentary shipping over {moneyShort(FREE_SHIPPING_MINIMUM)}
         <span className="hidden sm:inline">
           <span className="mx-2 text-gold-light">✦</span> 30-day returns
         </span>

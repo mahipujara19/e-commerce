@@ -18,4 +18,9 @@ export const RATE_LIMITS = {
   resetPasswordIp: { max: 10, windowMs: 15 * MINUTE },
   resendVerificationUser: { max: 5, windowMs: 60 * MINUTE },
   resendVerificationIp: { max: 10, windowMs: 60 * MINUTE },
+  // Stops a script or a stuck button from placing a flood of orders (each one holds stock).
+  signupIp: { max: 10, windowMs: 60 * MINUTE },
+  placeOrderUser: { max: 10, windowMs: 15 * MINUTE },
+  contactIp: { max: 5, windowMs: 60 * MINUTE },
+  clientErrorsIp: { max: 30, windowMs: 15 * MINUTE },
 }

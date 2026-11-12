@@ -18,6 +18,21 @@ const sessionSchema = new mongoose.Schema(
   { _id: false },
 )
 
+export const MAX_ADDRESSES = 10
+
+// Saved shipping addresses for faster checkout. One may be the default.
+const addressSchema = new mongoose.Schema({
+  label: { type: String, trim: true, maxlength: 40 },
+  fullName: { type: String, required: true, trim: true, maxlength: 200 },
+  phone: { type: String, required: true, trim: true, maxlength: 20 },
+  address: { type: String, required: true, trim: true, maxlength: 200 },
+  city: { type: String, required: true, trim: true, maxlength: 200 },
+  state: { type: String, required: true, trim: true, maxlength: 200 },
+  zipCode: { type: String, required: true, trim: true, maxlength: 20 },
+  country: { type: String, required: true, trim: true, maxlength: 100 },
+  isDefault: { type: Boolean, default: false },
+}, { toJSON: jsonOptions() })
+
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, minlength: 2, maxlength: 100 },
@@ -37,6 +52,12 @@ const userSchema = new mongoose.Schema(
     passwordResetToken: { type: String, select: false, index: true },
     passwordResetExpires: { type: Date, select: false },
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+    addresses: {
+      type: [addressSchema],
+      default: [],
+      validate: { validator: (list) => list.length <= MAX_ADDRESSES, message: `You can save up to ${MAX_ADDRESSES} addresses` },
+    },
+    marketingOptIn: { type: Boolean, default: false },
   },
   {
     timestamps: true,
@@ -50,6 +71,7 @@ const userSchema = new mongoose.Schema(
       'passwordResetToken',
       'passwordResetExpires',
       'wishlist',
+      'addresses',
     ]),
   },
 )

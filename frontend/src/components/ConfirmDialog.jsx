@@ -1,6 +1,6 @@
 import { CircularProgress, Dialog } from '@mui/material'
 
-const paperSx = { borderRadius: 0, bgcolor: 'rgb(var(--ivory))', backgroundImage: 'none', width: '100%', maxWidth: 440, m: 2 }
+const paperSx = { borderRadius: 0, bgcolor: 'rgb(var(--ivory))', backgroundImage: 'none', width: 'calc(100% - 32px)', minWidth: 0, maxWidth: 440, m: 2 }
 
 function ConfirmDialog({ open, title, description, confirmLabel = 'Confirm', busy = false, onConfirm, onClose }) {
   return (

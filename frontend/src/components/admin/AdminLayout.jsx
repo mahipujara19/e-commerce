@@ -11,11 +11,12 @@ import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../../toolkit/authSlice'
 import { fetchCustomers } from '../../toolkit/customerSlice'
 import { fetchAllOrders } from '../../toolkit/orderSlice'
-import { fetchproduct } from '../../toolkit/productslice'
+import { fetchproduct } from '../../toolkit/productSlice'
 import { toggleTheme } from '../../toolkit/uiSlice'
 import { LOW_STOCK_THRESHOLD } from '../../utils/format'
 import PageLoader from '../PageLoader'
 import { ADMIN_SECTIONS, adminPath, canAccess } from './adminSections'
+import usePageMeta from '../../hooks/usePageMeta'
 
 function AdminLogo() {
   const role = useSelector((state) => state.auth.user?.role)
@@ -54,7 +55,7 @@ function Sidebar({ onNavigate }) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-night px-5 py-7 text-cream">
+    <div className="flex min-h-full flex-col bg-night px-5 py-7 text-cream">
       <div className="px-3">
         <AdminLogo />
       </div>
@@ -120,6 +121,7 @@ function Sidebar({ onNavigate }) {
 }
 
 function AdminLayout() {
+  usePageMeta({ title: 'Admin', noindex: true })
   const dispatch = useDispatch()
   const { pathname } = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -143,7 +145,9 @@ function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-ivory lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
-      <aside className="sticky top-0 hidden h-screen lg:block">
+      {/* Exactly one screen tall; on short windows or when zoomed in, the menu scrolls inside the dark panel
+          instead of spilling below it and making the whole page scroll. */}
+      <aside className="sticky top-0 hidden h-screen overflow-y-auto overscroll-contain bg-night lg:block">
         <Sidebar />
       </aside>
 

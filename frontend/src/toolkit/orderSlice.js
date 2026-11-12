@@ -7,13 +7,20 @@ import { logout, sessionExpired } from './authSlice'
 export const fetchMyOrders = apiThunk('orders/fetchMine', () => api('/orders'))
 export const fetchAllOrders = apiThunk('orders/fetchAll', () => api('/orders/all'))
 
-export const updateOrderStatus = apiThunk('orders/updateStatus', ({ id, status }) =>
-  api(`/orders/${id}`, { method: 'PUT', body: { status } }),
+// One order, for the order page and the post-payment confirmation. Also settles a just-finished card payment.
+export const fetchOrder = apiThunk('orders/fetchOne', (id) => api(`/orders/${id}`))
+
+// Customers, while the order is still pending. A card payment is refunded by the server.
+export const cancelMyOrder = apiThunk('orders/cancelMine', (id) => api(`/orders/${id}/cancel`, { method: 'POST' }))
+
+// Staff. changes: { status?, carrier?, trackingNumber?, estimatedDelivery?, note? }
+export const updateOrderStatus = apiThunk('orders/updateStatus', ({ id, ...changes }) =>
+  api(`/orders/${id}`, { method: 'PUT', body: changes }),
 )
 
 const emptyList = () => ({ items: [], status: 'idle', error: null })
 
-const initialState = { mine: emptyList(), all: emptyList() }
+const initialState = { mine: emptyList(), all: emptyList(), byId: {} }
 
 const addListCases = (builder, thunk, key) => {
   builder
@@ -39,15 +46,22 @@ const orderSlice = createSlice({
     addListCases(builder, fetchMyOrders, 'mine')
     addListCases(builder, fetchAllOrders, 'all')
 
+    // Keeps every list that holds the order in step with the latest copy from the server.
+    const replaceEverywhere = (state, action) => {
+      const order = action.payload
+      const replace = (list) => {
+        const index = list.findIndex((item) => item.id === order.id)
+        if (index !== -1) list[index] = order
+      }
+      replace(state.all.items)
+      replace(state.mine.items)
+      state.byId[order.id] = order
+    }
+
     builder
-      .addCase(updateOrderStatus.fulfilled, (state, action) => {
-        const replace = (list) => {
-          const index = list.findIndex((order) => order.id === action.payload.id)
-          if (index !== -1) list[index] = action.payload
-        }
-        replace(state.all.items)
-        replace(state.mine.items)
-      })
+      .addCase(updateOrderStatus.fulfilled, replaceEverywhere)
+      .addCase(fetchOrder.fulfilled, replaceEverywhere)
+      .addCase(cancelMyOrder.fulfilled, replaceEverywhere)
       .addCase(logout.fulfilled, () => initialState)
       .addCase(sessionExpired, () => initialState)
   },

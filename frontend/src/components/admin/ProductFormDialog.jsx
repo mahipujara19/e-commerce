@@ -5,9 +5,9 @@ import { Alert, Autocomplete, CircularProgress, Dialog, IconButton, InputAdornme
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import { useDispatch } from 'react-redux'
-import { createProduct, updateProduct } from '../../toolkit/productslice'
+import { createProduct, updateProduct } from '../../toolkit/productSlice'
 
-const paperSx = { borderRadius: 0, bgcolor: 'rgb(var(--ivory))', backgroundImage: 'none', width: '100%', maxWidth: 760, m: { xs: 1, sm: 3 } }
+const paperSx = { borderRadius: 0, bgcolor: 'rgb(var(--ivory))', backgroundImage: 'none', width: { xs: 'calc(100% - 16px)', sm: 'calc(100% - 48px)' }, minWidth: 0, maxWidth: 760, m: { xs: 1, sm: 3 } }
 
 const url = () => Yup.string().trim().url('Please enter a full URL starting with https://')
 

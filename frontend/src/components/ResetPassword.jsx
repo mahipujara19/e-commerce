@@ -10,6 +10,7 @@ import { useDispatch } from 'react-redux'
 import { api } from '../utils/api'
 import { notify } from '../toolkit/toastSlice'
 import AuthLayout from './AuthLayout'
+import usePageMeta from '../hooks/usePageMeta'
 
 const resetSchema = Yup.object({
   password: Yup.string()
@@ -24,6 +25,7 @@ const resetSchema = Yup.object({
 })
 
 function ResetPassword() {
+  usePageMeta({ title: 'Choose a new password', noindex: true })
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') ?? ''
   const [showPassword, setShowPassword] = useState(false)

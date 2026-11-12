@@ -6,8 +6,10 @@ import { Link } from 'react-router-dom'
 import { fetchWishlist } from '../toolkit/wishlistSlice'
 import EmptyState from './EmptyState'
 import ProductCard, { ProductCardSkeleton } from './ProductCard'
+import usePageMeta from '../hooks/usePageMeta'
 
 function Wishlist() {
+  usePageMeta({ title: 'Wishlist', noindex: true })
   const dispatch = useDispatch()
   const { ids, status } = useSelector((state) => state.wishlist)
   const { items: products, status: productStatus } = useSelector((state) => state.products)

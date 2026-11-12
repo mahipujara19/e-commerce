@@ -32,14 +32,33 @@ export const setSessionExpiredHandler = (handler) => {
 }
 
 export class ApiRequestError extends Error {
-  constructor(status, message, code, retryAfterSeconds) {
+  constructor(status, message, code, retryAfterSeconds, data) {
     super(message)
     this.status = status
     this.code = code
     // Set on 429 responses from rate-limited endpoints.
     this.retryAfterSeconds = retryAfterSeconds
+    // Extra detail from the server, e.g. per-item stock issues or field errors.
+    this.data = data
   }
 }
+
+const REQUEST_TIMEOUT_MS = 20 * 1000
+
+// Used when the server gives no message of its own (a proxy error page, a crash, an empty body).
+const FALLBACK_MESSAGES = {
+  400: 'Some details were not accepted. Please check them and try again.',
+  401: 'Please sign in to continue.',
+  403: 'You do not have permission to do that.',
+  404: 'We could not find what you were looking for. It may have been removed.',
+  409: 'Something changed in the meantime. Please review and try again.',
+  413: 'That request was too large.',
+  429: 'Too many attempts. Please wait a moment and try again.',
+}
+
+export const messageForStatus = (status) =>
+  FALLBACK_MESSAGES[status] ??
+  (status >= 500 ? 'Our servers are having trouble right now. Please try again in a moment.' : 'Something went wrong. Please try again.')
 
 const request = async (path, { method = 'GET', body, headers: extra } = {}) => {
   const headers = { ...extra }
@@ -52,18 +71,28 @@ const request = async (path, { method = 'GET', body, headers: extra } = {}) => {
       headers,
       credentials: 'include',
       body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     })
-  } catch {
-    throw new ApiRequestError(0, 'Unable to reach the server. Please check your connection.')
+  } catch (error) {
+    if (error?.name === 'TimeoutError') {
+      throw new ApiRequestError(0, 'The server took too long to respond. Please check your connection and try again.', 'TIMEOUT')
+    }
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false
+    throw new ApiRequestError(
+      0,
+      offline ? 'You appear to be offline. Reconnect and try again.' : 'Unable to reach the server. Please check your connection.',
+      'NETWORK',
+    )
   }
 
   const result = await response.json().catch(() => null)
   if (!response.ok || !result?.success) {
     throw new ApiRequestError(
       response.status,
-      result?.message ?? 'The server is unavailable. Please try again shortly.',
+      result?.message ?? messageForStatus(response.status),
       result?.data?.code,
       result?.data?.retryAfterSeconds,
+      result?.data,
     )
   }
   return result.data

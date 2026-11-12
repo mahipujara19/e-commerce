@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { money } from '../utils/format'
+import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
+import { formatDate, money, PAYMENT_LABELS } from '../utils/format'
 
 const STATUS_STYLES = {
   pending: 'bg-sand text-stone',
@@ -53,13 +54,75 @@ export function OrderTotals({ order }) {
   return (
     <dl className="space-y-2 text-sm">
       <div className="flex justify-between"><dt className="text-stone">Subtotal</dt><dd>{money(order.subtotal)}</dd></div>
+      {order.discount > 0 && (
+        <div className="flex justify-between text-gold">
+          <dt>Discount{order.couponCode ? ` (${order.couponCode})` : ''}</dt>
+          <dd>−{money(order.discount)}</dd>
+        </div>
+      )}
+      <div className="flex justify-between"><dt className="text-stone">Shipping</dt><dd>{order.shipping === 0 ? 'Free' : money(order.shipping)}</dd></div>
       <div className="flex justify-between"><dt className="text-stone">Tax</dt><dd>{money(order.tax)}</dd></div>
-      <div className="flex justify-between"><dt className="text-stone">Shipping</dt><dd>{order.shipping === 0 ? 'Complimentary' : money(order.shipping)}</dd></div>
       <div className="flex items-baseline justify-between border-t border-line pt-3">
         <dt className="font-semibold uppercase tracking-[0.14em]">Total</dt>
         <dd className="font-display text-2xl">{money(order.totalAmount)}</dd>
       </div>
     </dl>
+  )
+}
+
+const PAYMENT_STYLES = {
+  paid: 'text-emerald-700 dark:text-emerald-400',
+  refunded: 'text-stone',
+  awaiting_payment: 'text-gold',
+  unpaid: 'text-stone',
+}
+
+export function PaymentBadge({ payment }) {
+  const status = payment?.status ?? 'unpaid'
+  // An unpaid pay-on-delivery order is expected, not overdue, so it says so.
+  const text = status === 'unpaid' && payment?.method !== 'card' ? 'Pay on delivery' : PAYMENT_LABELS[status] ?? status
+  return (
+    <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${PAYMENT_STYLES[status] ?? ''}`}>
+      {text}
+    </span>
+  )
+}
+
+const PROGRESS = ['pending', 'processing', 'shipped', 'delivered']
+const PROGRESS_LABELS = { pending: 'Order placed', processing: 'Being prepared', shipped: 'Shipped', delivered: 'Delivered' }
+
+// Placed → prepared → shipped → delivered, with the date each step happened (from statusHistory).
+export function OrderTimeline({ order }) {
+  if (order.status === 'cancelled') {
+    const at = order.statusHistory?.findLast?.((event) => event.status === 'cancelled')?.at ?? order.updatedAt
+    return (
+      <p className="bg-red-600/10 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+        Cancelled on {formatDate(at)}.{' '}
+        {order.payment?.status === 'refunded' ? 'A refund was issued to your original payment method.' : 'No payment was taken.'}
+      </p>
+    )
+  }
+
+  const reached = PROGRESS.indexOf(order.status)
+  const dateFor = (status) => (status === 'pending' ? order.createdAt : order.statusHistory?.findLast?.((event) => event.status === status)?.at)
+
+  return (
+    <ol className="grid grid-cols-4 gap-2" aria-label="Order progress">
+      {PROGRESS.map((status, index) => {
+        const done = index <= reached
+        const date = done && dateFor(status)
+        return (
+          <li key={status} className="relative text-center" aria-current={index === reached ? 'step' : undefined}>
+            {index > 0 && <span className={`absolute right-1/2 top-3.5 h-px w-full ${index <= reached ? 'bg-gold' : 'bg-line'}`} aria-hidden="true" />}
+            <span className={`relative mx-auto grid h-7 w-7 place-items-center rounded-full text-[11px] font-semibold ${done ? 'bg-gold text-white' : 'bg-surface text-stone ring-1 ring-line'}`}>
+              {done ? <CheckRoundedIcon sx={{ fontSize: 14 }} /> : index + 1}
+            </span>
+            <span className={`mt-2 block text-[11px] font-semibold uppercase tracking-[0.12em] ${done ? 'text-ink' : 'text-stone'}`}>{PROGRESS_LABELS[status]}</span>
+            {date && <span className="block text-[11px] text-stone">{formatDate(date, { day: 'numeric', month: 'short' })}</span>}
+          </li>
+        )
+      })}
+    </ol>
   )
 }
 

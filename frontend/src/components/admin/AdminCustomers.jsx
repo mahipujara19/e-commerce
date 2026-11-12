@@ -9,17 +9,15 @@ import { useDispatch, useSelector } from 'react-redux'
 import useQueryParams from '../../hooks/useQueryParams'
 import { fetchCustomers } from '../../toolkit/customerSlice'
 import { formatDate, money, orderNumber } from '../../utils/format'
-import { ROLE_LABELS } from '../../utils/roles'
 import { orderLink } from './adminSections'
 import { OrderStatusBadge } from '../OrderDetails'
 import { AdminEmpty, AdminPageHeader, DataTable, FilterChips, LoadError, SearchField, TableHead, TableSkeleton, Toolbar } from './AdminUI'
 
+// Shoppers only: admins and staff are managed under Team.
 const FILTERS = [
-  { id: '', label: 'All', test: () => true },
-  { id: 'customers', label: 'Customers', test: (user) => user.role === 'customer' },
+  { id: '', label: 'All customers', test: () => true },
   { id: 'repeat', label: 'Repeat buyers', test: (user) => user.orderCount > 1 },
   { id: 'unverified', label: 'Unverified', test: (user) => !user.emailVerified },
-  { id: 'team', label: 'Team', test: (user) => user.role !== 'customer' },
 ]
 
 const COLUMNS = [
@@ -55,7 +53,6 @@ function CustomerPanel({ customer, onClose }) {
   const details = [
     ['Email', customer.email],
     ['Phone', customer.phone || '—'],
-    ['Role', ROLE_LABELS[customer.role] ?? customer.role],
     ['Joined', formatDate(customer.createdAt, { day: 'numeric', month: 'long', year: 'numeric' })],
   ]
 
@@ -125,7 +122,8 @@ function CustomerPanel({ customer, onClose }) {
 
 function AdminCustomers() {
   const dispatch = useDispatch()
-  const { items: customers, status, error } = useSelector((state) => state.customers)
+  const { items: accounts, status, error } = useSelector((state) => state.customers)
+  const customers = useMemo(() => accounts.filter((account) => account.role === 'customer'), [accounts])
   const [params, setParams] = useQueryParams()
 
   const filter = FILTERS.find((item) => item.id === (params.get('filter') ?? '')) ?? FILTERS[0]
@@ -137,14 +135,13 @@ function AdminCustomers() {
     return customers.filter(filter.test).filter((customer) => !term || `${customer.name} ${customer.email}`.toLowerCase().includes(term))
   }, [customers, filter, query])
 
-  const loading = customers.length === 0 && (status === 'idle' || status === 'loading')
-  const shoppers = customers.filter((customer) => customer.role === 'customer').length
+  const loading = accounts.length === 0 && (status === 'idle' || status === 'loading')
 
   return (
     <>
       <AdminPageHeader
         title="Customers"
-        description={loading ? 'Loading…' : `${shoppers} customer accounts · ${customers.length - shoppers} team members`}
+        description={loading ? 'Loading…' : `${customers.length} customer ${customers.length === 1 ? 'account' : 'accounts'}`}
       />
 
       <Toolbar>
@@ -186,9 +183,7 @@ function AdminCustomers() {
                     <span className="min-w-0">
                       <span className="flex items-center gap-2 font-medium group-hover:text-gold">
                         {customer.name}
-                        {customer.role !== 'customer' && (
-                          <span className="bg-ink px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-ivory">{customer.role}</span>
-                        )}
+
                       </span>
                       <span className="block max-w-[260px] truncate text-xs text-stone">{customer.email}</span>
                     </span>

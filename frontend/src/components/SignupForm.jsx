@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import ReCAPTCHA from 'react-google-recaptcha'
-import { Alert, CircularProgress, IconButton, InputAdornment, TextField } from '@mui/material'
+import { Alert, Checkbox, CircularProgress, FormControlLabel, IconButton, InputAdornment, TextField } from '@mui/material'
 import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded'
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded'
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
@@ -11,6 +11,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { signup } from '../toolkit/authSlice'
 import AuthLayout, { FormDivider } from './AuthLayout'
+import usePageMeta from '../hooks/usePageMeta'
 
 const PASSWORD_RULES = [
   { label: '8+ characters', test: (value) => value.length >= 8 },
@@ -43,7 +44,12 @@ const signupSchema = Yup.object({
     .optional(),
 })
 
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
+// Public site key from the Google reCAPTCHA registration; its secret key is RECAPTCHA_SECRET_KEY on the server.
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
+// A production build without the key cannot pass the server's check, so sign-up is shown as unavailable instead
+// of failing after the form is filled in. Development may run without reCAPTCHA (see .env.example).
+const CAPTCHA_MISSING = import.meta.env.PROD && !RECAPTCHA_SITE_KEY
+if (CAPTCHA_MISSING) console.error('[captcha] VITE_RECAPTCHA_SITE_KEY was not set when this site was built, so sign-up is unavailable.')
 
 function PasswordToggle({ visible, onToggle }) {
   return (
@@ -56,9 +62,11 @@ function PasswordToggle({ visible, onToggle }) {
 }
 
 function SignupForm() {
+  usePageMeta({ title: 'Create an account', noindex: true })
   const [submitted, setSubmitted] = useState(false)
   const [signupError, setSignupError] = useState('')
   const [captchaToken, setCaptchaToken] = useState(null)
+  const [captchaLoadError, setCaptchaLoadError] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const recaptchaRef = useRef(null)
@@ -81,6 +89,7 @@ function SignupForm() {
       confirmPassword: '',
       phone: '',
       website: '',
+      marketingOptIn: false,
     },
     validationSchema: signupSchema,
     onSubmit: async (values, { setSubmitting }) => {
@@ -90,7 +99,7 @@ function SignupForm() {
         return
       }
 
-      if (!captchaToken) {
+      if (CAPTCHA_MISSING || (RECAPTCHA_SITE_KEY && !captchaToken)) {
         setSubmitting(false)
         return
       }
@@ -104,11 +113,16 @@ function SignupForm() {
             email: values.email.trim(),
             phone: values.phone,
             password: values.password,
+            marketingOptIn: values.marketingOptIn,
+            captchaToken: captchaToken || undefined,
           }),
         ).unwrap()
         setSubmitted(true)
       } catch (message) {
         setSignupError(message || 'Something went wrong. Please try again.')
+        // A reCAPTCHA token works once; a failed attempt needs a fresh check.
+        recaptchaRef.current?.reset()
+        setCaptchaToken(null)
       } finally {
         setSubmitting(false)
       }
@@ -244,26 +258,45 @@ function SignupForm() {
               ref={recaptchaRef}
               sitekey={RECAPTCHA_SITE_KEY}
               theme={theme}
-              onChange={(token) => setCaptchaToken(token)}
+              onChange={(token) => {
+                setCaptchaToken(token)
+                setCaptchaLoadError(false)
+              }}
               onExpired={() => setCaptchaToken(null)}
+              onErrored={() => {
+                setCaptchaToken(null)
+                setCaptchaLoadError(true)
+              }}
             />
-          ) : (
-            <Alert severity="error" className="w-full">
-              reCAPTCHA is not configured. Set VITE_RECAPTCHA_SITE_KEY in the app environment.
+          ) : null}
+          {CAPTCHA_MISSING && (
+            <Alert severity="warning" className="w-full">
+              Sign-up is temporarily unavailable. Please try again later or <Link to="/contact" className="underline">contact us</Link>.
             </Alert>
           )}
-          {formik.submitCount > 0 && !captchaToken && (
+          {captchaLoadError && (
+            <Alert severity="warning" className="w-full">
+              The &ldquo;I am not a robot&rdquo; check could not load. Check your connection, allow google.com if you use a content blocker, then reload the page.
+            </Alert>
+          )}
+          {RECAPTCHA_SITE_KEY && !captchaLoadError && formik.submitCount > 0 && !captchaToken && (
             <Alert severity="warning" className="w-full">Please complete the reCAPTCHA verification.</Alert>
           )}
         </div>
 
         {signupError && <Alert severity="error">{signupError}</Alert>}
 
-        <button type="submit" disabled={formik.isSubmitting || !captchaToken} className="btn-primary h-14 w-full">
+        <FormControlLabel
+          control={<Checkbox name="marketingOptIn" checked={formik.values.marketingOptIn} onChange={formik.handleChange} size="small" />}
+          label={<span className="text-sm text-stone">Email me about new arrivals and offers. Unsubscribe anytime.</span>}
+        />
+
+        <button type="submit" disabled={formik.isSubmitting || CAPTCHA_MISSING || (Boolean(RECAPTCHA_SITE_KEY) && !captchaToken)} className="btn-primary h-14 w-full">
           {formik.isSubmitting ? <CircularProgress size={20} color="inherit" /> : 'Create account'}
         </button>
         <p className="text-center text-xs leading-relaxed text-stone">
-          By creating an account you agree to receive order updates by email.
+          By creating an account you accept our <Link to="/terms" className="underline">terms of sale</Link> and{' '}
+          <Link to="/privacy" className="underline">privacy policy</Link>. We email you about your orders.
         </p>
       </form>
 

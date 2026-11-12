@@ -5,8 +5,9 @@ import PageLoader from './components/PageLoader.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
 import StorefrontLayout from './components/StorefrontLayout.jsx'
 import Toaster from './components/Toaster.jsx'
+import { CookieConsent, OfflineBanner, RouteTracker } from './components/SiteNotices.jsx'
 import { ADMIN_SECTIONS } from './components/admin/adminSections.js'
-import { fetchproduct } from './toolkit/productslice'
+import { fetchproduct } from './toolkit/productSlice'
 import { restoreSession } from './toolkit/authSlice'
 import { fetchWishlist } from './toolkit/wishlistSlice'
 import { isStaff, STAFF_ROLES } from './utils/roles'
@@ -26,6 +27,11 @@ const Wishlist = lazy(() => import('./components/Wishlist.jsx'))
 const ForgotPassword = lazy(() => import('./components/ForgotPassword.jsx'))
 const ResetPassword = lazy(() => import('./components/ResetPassword.jsx'))
 const VerifyEmail = lazy(() => import('./components/VerifyEmail.jsx'))
+const CheckoutComplete = lazy(() => import('./components/CheckoutComplete.jsx'))
+const OrderPage = lazy(() => import('./components/OrderPage.jsx'))
+const PolicyPage = lazy(() => import('./components/PolicyPage.jsx'))
+const FaqPage = lazy(() => import('./components/FaqPage.jsx'))
+const ContactPage = lazy(() => import('./components/ContactPage.jsx'))
 const AdminLayout = lazy(() => import('./components/admin/AdminLayout.jsx'))
 const AdminNotFound = lazy(() => import('./components/admin/AdminNotFound.jsx'))
 
@@ -65,6 +71,8 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <RouteTracker />
+      <OfflineBanner />
       <Suspense fallback={<PageLoader className="min-h-screen" />}>
         <Routes>
           {/* Storefront: everything customers see, wrapped in the header, footer and bag drawer */}
@@ -76,12 +84,20 @@ function App() {
             <Route path="/signup" element={<SignupForm />} />
             <Route path="/login" element={<LoginForm />} />
             <Route path="/checkout" element={<CheckoutForm />} />
+            <Route path="/checkout/complete" element={<RequireAuth><CheckoutComplete /></RequireAuth>} />
             <Route path="/about" element={<About />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
+            <Route path="/account/orders/:id" element={<RequireAuth><OrderPage /></RequireAuth>} />
             <Route path="/wishlist" element={<RequireAuth><Wishlist /></RequireAuth>} />
+            <Route path="/shipping" element={<PolicyPage page="shipping" />} />
+            <Route path="/returns" element={<PolicyPage page="returns" />} />
+            <Route path="/privacy" element={<PolicyPage page="privacy" />} />
+            <Route path="/terms" element={<PolicyPage page="terms" />} />
+            <Route path="/faq" element={<FaqPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 
@@ -96,6 +112,7 @@ function App() {
         </Routes>
       </Suspense>
       <Toaster />
+      <CookieConsent />
     </BrowserRouter>
   )
 }

@@ -6,15 +6,18 @@ import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined
 import { useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import SectionHeading from './SectionHeading'
+import usePageMeta from '../hooks/usePageMeta'
+import { FREE_SHIPPING_MINIMUM, moneyShort } from '../utils/format'
 
 const VALUES = [
   { icon: VerifiedOutlinedIcon, title: 'Quality first', text: 'Every piece is tested and refined, held to a standard that puts craftsmanship and durability above all else.' },
   { icon: RecyclingRoundedIcon, title: 'Responsibly sourced', text: 'We partner with makers who share our commitment to ethical production, fair wages and minimal impact.' },
   { icon: WorkspacePremiumOutlinedIcon, title: 'Designed with care', text: 'From the weight of a clasp to the last note of a fragrance, every detail is intentional.' },
-  { icon: LocalShippingOutlinedIcon, title: 'Thoughtful delivery', text: 'Complimentary shipping over $75, packed beautifully in recycled materials.' },
+  { icon: LocalShippingOutlinedIcon, title: 'Thoughtful delivery', text: `Complimentary shipping over ${moneyShort(FREE_SHIPPING_MINIMUM)}, packed beautifully in recycled materials.` },
 ]
 
 function About() {
+  usePageMeta({ title: 'Our story', description: 'Why goodthings exists, and how we choose pieces made to be kept for years.' })
   const products = useSelector((state) => state.products.items)
 
   const stats = useMemo(() => {

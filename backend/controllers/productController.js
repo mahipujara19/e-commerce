@@ -1,6 +1,8 @@
 import { matchedData } from 'express-validator'
 import Product from '../models/Product.js'
 import { ApiError, sendSuccess } from '../utils/apiResponse.js'
+import { audit } from '../utils/auditLog.js'
+import { formatMoney } from '../utils/money.js'
 import { notifyStockChanges } from '../utils/stockNotifications.js'
 
 const SORTS = {
@@ -51,6 +53,7 @@ export const getProduct = async (req, res, next) => {
 export const createProduct = async (req, res, next) => {
   try {
     const product = await Product.create({ ...matchedData(req, { locations: ['body'] }), createdBy: req.user._id })
+    audit(req.user, 'product.create', { targetType: 'product', targetId: product.id, summary: `Created ${product.name} at ${formatMoney(product.price)}` })
     sendSuccess(res, { status: 201, message: 'Product created', data: product })
   } catch (error) {
     next(error)
@@ -63,8 +66,21 @@ export const updateProduct = async (req, res, next) => {
     if (!product) throw new ApiError(404, 'Product not found')
 
     const previousStock = product.stock
-    product.set(matchedData(req, { locations: ['body'] }))
+    const previousPrice = product.price
+    const changes = matchedData(req, { locations: ['body'] })
+    product.set(changes)
     await product.save()
+
+    const notes = [
+      previousPrice !== product.price && `price ${formatMoney(previousPrice)} → ${formatMoney(product.price)}`,
+      previousStock !== product.stock && `stock ${previousStock} → ${product.stock}`,
+    ].filter(Boolean)
+    audit(req.user, 'product.update', {
+      targetType: 'product',
+      targetId: product.id,
+      summary: `Updated ${product.name}${notes.length ? `: ${notes.join(', ')}` : ''}`,
+      details: { fields: Object.keys(changes) },
+    })
 
     sendSuccess(res, { message: 'Product updated', data: product })
 
@@ -104,6 +120,13 @@ export const updateStock = async (req, res, next) => {
     const changes = before
       .map((product, index) => product && { name: product.name, sku: product.sku, previous: product.stock, updated: updates[index].stock })
       .filter((change) => change && change.previous !== change.updated)
+    if (changes.length) {
+      audit(req.user, 'product.stock', {
+        targetType: 'product',
+        summary: changes.map(({ name, previous, updated }) => `${name}: ${previous} → ${updated}`).join('; '),
+        details: { changes },
+      })
+    }
     notifyStockChanges({ changes, updatedBy: req.user })
   } catch (error) {
     next(error)
@@ -148,6 +171,7 @@ export const deleteProduct = async (req, res, next) => {
     const product = await Product.findByIdAndDelete(req.params.id)
     if (!product) throw new ApiError(404, 'Product not found')
 
+    audit(req.user, 'product.delete', { targetType: 'product', targetId: product.id, summary: `Deleted ${product.name}` })
     sendSuccess(res, { message: 'Product deleted' })
   } catch (error) {
     next(error)

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Rating } from '@mui/material'
 import SearchOffRoundedIcon from '@mui/icons-material/SearchOffRounded'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
@@ -11,10 +11,12 @@ import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useParams } from 'react-router-dom'
 import { addItem } from '../toolkit/slice'
-import { fetchproduct } from '../toolkit/productslice'
+import { fetchproduct } from '../toolkit/productSlice'
 import { openCart } from '../toolkit/uiSlice'
-import { formatCategory, money, originalPrice } from '../utils/format'
+import { CURRENCY, formatCategory, FREE_SHIPPING_MINIMUM, money, moneyShort, originalPrice } from '../utils/format'
 import useWishlist from '../hooks/useWishlist'
+import usePageMeta from '../hooks/usePageMeta'
+import { gaItem, trackEvent } from '../utils/analytics'
 import EmptyState from './EmptyState'
 import ProductCard from './ProductCard'
 import ProductReviews from './ProductReviews'
@@ -26,6 +28,29 @@ const accordionSx = {
   borderBottom: '1px solid rgb(var(--line))',
   '&::before': { display: 'none' },
 }
+
+// schema.org Product data, so search results can show price, availability and rating.
+const productJsonLd = (product) => ({
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: product.title,
+  description: product.description,
+  image: product.images?.length ? product.images : [product.thumbnail],
+  sku: product.sku || product.id,
+  brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+  category: product.category,
+  offers: {
+    '@type': 'Offer',
+    priceCurrency: CURRENCY,
+    price: product.price.toFixed(2),
+    availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+    url: typeof window !== 'undefined' ? window.location.href : undefined,
+  },
+  aggregateRating:
+    product.reviews?.length > 0
+      ? { '@type': 'AggregateRating', ratingValue: product.rating.toFixed(1), reviewCount: product.reviews.length }
+      : undefined,
+})
 
 function ProductItem({ id }) {
   const dispatch = useDispatch()
@@ -41,6 +66,21 @@ function ProductItem({ id }) {
     () => (product ? products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 4) : []),
     [products, product],
   )
+
+  usePageMeta({
+    title: product?.title ?? (status === 'succeeded' ? 'Piece not found' : undefined),
+    description: product ? `${product.description.slice(0, 150)}${product.description.length > 150 ? '…' : ''}` : undefined,
+    image: product?.thumbnail,
+    type: product ? 'product' : 'website',
+    noindex: status === 'succeeded' && !product,
+    jsonLd: product && productJsonLd(product),
+  })
+
+  const productId = product?.id
+  useEffect(() => {
+    if (productId) trackEvent('view_item', { currency: CURRENCY, value: product.price, items: [gaItem(product)] })
+    // Once per product page, not on every stock refresh.
+  }, [productId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!product && (status === 'idle' || status === 'loading')) {
     return (
@@ -254,7 +294,7 @@ function ProductItem({ id }) {
               </AccordionSummary>
               <AccordionDetails sx={{ px: 0, pb: 3 }}>
                 <p className="text-sm leading-relaxed text-stone">
-                  Complimentary shipping on orders over $75. Every order is carefully packed with recycled materials.{' '}
+                  Complimentary shipping on orders over {moneyShort(FREE_SHIPPING_MINIMUM)}. Every order is carefully packed with recycled materials.{' '}
                   {product.returnPolicy || '30-day returns'} — simply contact our concierge to arrange a collection.
                 </p>
               </AccordionDetails>

@@ -12,6 +12,7 @@ import {
 import { byIp, limitRequests } from '../middleware/rateLimit.js'
 import { validate } from '../middleware/validate.js'
 import { limiters } from '../utils/limiters.js'
+import { requireCaptcha } from '../utils/recaptcha.js'
 
 const router = Router()
 
@@ -47,14 +48,21 @@ export const passwordRule = () =>
 const tokenRule = () =>
   body('token').isString().isHexadecimal().isLength({ min: 64, max: 64 }).withMessage('This link is invalid or has expired')
 
-const signupRules = [nameRule(), emailRule(), phoneRule(), passwordRule()]
+const signupRules = [nameRule(), emailRule(), phoneRule(), passwordRule(), body('marketingOptIn').optional().isBoolean().toBoolean()]
+
+const signupIpLimit = limitRequests({
+  limiter: limiters.signupIp,
+  key: byIp,
+  name: 'signupIp',
+  message: 'Too many accounts created from this network. Please try again later.',
+})
 
 const loginRules = [
   emailRule(),
   body('password').isString().notEmpty().withMessage('Password is required'),
 ]
 
-router.post('/signup', signupRules, validate, signup)
+router.post('/signup', signupIpLimit, signupRules, validate, requireCaptcha, signup)
 // Failed logins are limited per IP and per email inside the controller, since only failures count.
 router.post('/login', loginRules, validate, login)
 router.post('/refresh', refresh)

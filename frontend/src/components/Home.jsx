@@ -9,26 +9,29 @@ import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import { setCategory } from '../toolkit/searchSlice'
-import { LUXURY_CATEGORIES, SIGNATURE_CATEGORIES, formatCategory, money } from '../utils/format'
+import { formatCategory, FREE_SHIPPING_MINIMUM, LUXURY_CATEGORIES, money, moneyShort, SIGNATURE_CATEGORIES } from '../utils/format'
+import useCouponOffers from '../hooks/useCouponOffers'
+import CouponOffers from './CouponOffers'
 import ProductCard, { ProductCardSkeleton } from './ProductCard'
 import SectionHeading from './SectionHeading'
+import usePageMeta from '../hooks/usePageMeta'
 
 
 const MARQUEE = ['Fine jewellery', 'Timepieces', 'Signature fragrance', 'Leather goods', 'Eyewear', 'Objects for the home']
 
 const PERKS = [
-  { icon: LocalShippingOutlinedIcon, title: 'Complimentary shipping', text: 'On every order over $75' },
+  { icon: LocalShippingOutlinedIcon, title: 'Complimentary shipping', text: `On every order over ${moneyShort(FREE_SHIPPING_MINIMUM)}` },
   { icon: AutorenewRoundedIcon, title: 'Effortless returns', text: '30 days to change your mind' },
   { icon: LockOutlinedIcon, title: 'Secure checkout', text: 'Encrypted, protected payments' },
   { icon: SupportAgentOutlinedIcon, title: 'Concierge support', text: 'Here for you 7 days a week' },
 ]
 
 function Home() {
+  usePageMeta({})
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { items: products, status } = useSelector((state) => state.products)
-  const [email, setEmail] = useState('')
-  const [subscribed, setSubscribed] = useState(false)
+  const offers = useCouponOffers()
   const loading = status === 'idle' || status === 'loading'
 
   const luxuryProducts = useMemo(() => {
@@ -348,47 +351,34 @@ function Home() {
         </section>
       )}
 
-      {/* Newsletter */}
+      {/* Promo codes customers can use now (hidden when there are none) */}
+      {offers?.length > 0 && (
+        <section className="pt-14 md:pt-20 lg:pt-28" aria-label="Offers">
+          <div className="container-x">
+            <div className="bg-surface p-6 ring-1 ring-line sm:p-8">
+              <CouponOffers offers={offers} headingId="home-offers-title" title="Current offers · use these codes at checkout" />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Newsletter: there is no subscription service yet, so the page says so instead of pretending to save an email. */}
       <section className="py-14 md:py-20 lg:py-28" aria-labelledby="newsletter-title">
         <div className="container-x">
           <div className="relative overflow-hidden bg-surface px-6 py-16 text-center ring-1 ring-line md:px-16 md:py-20">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold-soft blur-2xl" />
             <div className="relative">
               <h2 id="newsletter-title" className="font-display text-4xl md:text-5xl">
-                Join for early access
+                Our newsletter is coming soon
               </h2>
               <p className="mx-auto mt-4 max-w-md leading-relaxed text-stone">
-                Be the first to hear about new arrivals, private sales and stories from our makers.
+                Email sign-up is not open yet, so we are not collecting addresses here. Until then, new arrivals and
+                current offers appear first in the shop.
               </p>
-              {subscribed ? (
-                <p role="status" className="mx-auto mt-10 inline-flex items-center gap-2 bg-sand px-6 py-4 text-sm">
-                  <CheckRoundedIcon sx={{ fontSize: 18 }} className="text-gold" />
-                  Thank you — you&apos;re on the list as {email}.
-                </p>
-              ) : (
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault()
-                    setSubscribed(true)
-                  }}
-                  className="mx-auto mt-10 flex max-w-lg flex-col gap-3 sm:flex-row"
-                >
-                  <label htmlFor="newsletter-email" className="sr-only">Email address</label>
-                  <input
-                    id="newsletter-email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="Your email address"
-                    className="h-14 w-full min-w-0 shrink-0 border border-line bg-ivory px-5 text-sm outline-none transition focus:border-ink sm:w-auto sm:flex-1"
-                  />
-                  <button type="submit" className="btn-primary h-14">
-                    Subscribe
-                  </button>
-                </form>
-              )}
-              <p className="mt-4 text-xs text-stone">No spam, ever. Unsubscribe anytime.</p>
+              <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
+                <Link to="/shop" className="btn-primary h-14">See new arrivals</Link>
+                <Link to="/contact" className="btn-outline h-14">Contact us</Link>
+              </div>
             </div>
           </div>
         </div>

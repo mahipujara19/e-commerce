@@ -35,3 +35,18 @@ prompt.txt
 *.njsproj
 *.sln
 *.sw?
+
+*.md
+!README.md
+!GO_LIVE_STEPS.md
+
+fixweb.txt
+e-com.txt
+
+# Browser tests (Playwright): not used for now. Files are kept locally, never committed.
+e2e/
+playwright.config.js
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

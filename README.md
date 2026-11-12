@@ -2,6 +2,12 @@
 
 A full-stack e-commerce app. The frontend uses React, Vite, Material UI, and Redux Toolkit. The backend uses Express and MongoDB, with JWT authentication, CSRF protection, and role-based access for admins, staff, and customers.
 
+**Going live?** Read [DEPLOYMENT.md](DEPLOYMENT.md): production settings, Stripe setup, monitoring, backups, rollback and the incident runbook. All settings are listed in [.env.example](.env.example).
+
+## Deploying
+
+The repo is ready for **Vercel**: `vercel.json` builds the storefront into `frontend/dist` and runs the API from `api/index.js` as a serverless function (region Mumbai, `bom1`). Set the environment variables listed in `.env.example` in the Vercel project (at least `MONGO_URI`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`); the site address is detected automatically. Any Node host also works with `npm run build` and `NODE_ENV=production SERVE_CLIENT=true npm start`.
+
 ## Getting started
 
 ### Requirements
@@ -34,6 +40,9 @@ backend/
   config/              Environment validation, MongoDB connection, roles, security thresholds
   controllers/         Request handlers
   data/                Catalog used by the seed script
+  app.js               Express app (routes, security headers, logging); index.js starts it
+  services/            Order lifecycle: pricing, stock, coupons, Stripe payments, refunds
+  tests/               API integration tests
   middleware/          Authentication, roles, CSRF, rate limiting, validation, and error handling
   models/              User, Product, Order, and RateLimit schemas
   routes/              Route definitions and validation rules
@@ -68,6 +77,7 @@ frontend/
 | `npm run build` | Build the frontend into `frontend/dist` |
 | `npm run preview` | Preview the production build locally |
 | `npm run lint` | Run Oxlint |
+| `npm test` | Unit tests and API integration tests (in-memory MongoDB, no setup needed) |
 
 ## Environment variables
 
@@ -88,7 +98,8 @@ All variables live in `.env` at the repo root. `.env.local` also works for front
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | No | SMTP server for outgoing email (see "Email") |
 | `EMAIL_FROM` | No | Sender address |
 | `STOCK_ALERT_EMAILS` | No | Comma-separated recipients of stock-change emails. When empty, every admin is emailed |
-| `VITE_RECAPTCHA_SITE_KEY` | No | reCAPTCHA site key for the signup form |
+| `VITE_RECAPTCHA_SITE_KEY` | In production | Public reCAPTCHA v2 site key for the signup form (frontend; changing it needs a rebuild) |
+| `RECAPTCHA_SECRET_KEY` | In production | Secret key from the same reCAPTCHA registration (server only). In production, sign-up is refused without it; in development both may be left empty to skip the check |
 | `VITE_API_URL` | No | API origin when it is not served from the same origin as the frontend, e.g. `https://api.example.com` |
 
 The API refuses to start if a required variable is missing or the two JWT secrets are the same.

@@ -110,7 +110,9 @@ export function PanelLink({ to, children }) {
 // Horizontal scroll stays inside the card on small screens.
 export function DataTable({ minWidth = 760, children }) {
   return (
-    <div className="mt-6 overflow-x-auto bg-surface ring-1 ring-line">
+    // relative: screen-reader-only column titles (absolutely positioned) stay inside the scroll area instead of
+    // stretching the page sideways on phones.
+    <div className="relative mt-6 overflow-x-auto bg-surface ring-1 ring-line">
       <table className="w-full text-left text-sm" style={{ minWidth }}>
         {children}
       </table>
@@ -118,12 +120,13 @@ export function DataTable({ minWidth = 760, children }) {
   )
 }
 
-export function TableHead({ columns }) {
+// dense: tighter side padding, for wide tables that must fit a laptop screen. Match it in the row cells (px-4).
+export function TableHead({ columns, dense = false }) {
   return (
     <thead className="border-b border-line text-[10px] uppercase tracking-[0.18em] text-stone">
       <tr>
         {columns.map((column) => (
-          <th key={column.label} scope="col" className={`px-5 py-4 font-semibold ${column.align === 'right' ? 'text-right' : ''}`}>
+          <th key={column.label} scope="col" className={`${dense ? 'px-4' : 'px-5'} py-4 font-semibold ${column.align === 'right' ? 'text-right' : ''}`}>
             {column.hidden ? <span className="sr-only">{column.label}</span> : column.label}
           </th>
         ))}

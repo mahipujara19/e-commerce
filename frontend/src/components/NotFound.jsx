@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
+import usePageMeta from '../hooks/usePageMeta'
 
 function NotFound() {
+  usePageMeta({ title: 'Page not found', noindex: true })
   return (
     <section className="container-x grid min-h-[70vh] place-items-center py-24 text-center" aria-labelledby="not-found-title">
       <div className="max-w-lg animate-fade-up">

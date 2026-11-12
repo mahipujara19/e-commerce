@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
-import { Alert, CircularProgress, TextField } from '@mui/material'
+import { Alert, Checkbox, CircularProgress, FormControlLabel, TextField } from '@mui/material'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
 import MarkEmailUnreadOutlinedIcon from '@mui/icons-material/MarkEmailUnreadOutlined'
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined'
 import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded'
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded'
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
+import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { updateProfile } from '../toolkit/authSlice'
@@ -16,11 +18,14 @@ import { notify } from '../toolkit/toastSlice'
 import { api } from '../utils/api'
 import { formatDate, money, orderNumber } from '../utils/format'
 import EmptyState from './EmptyState'
-import { OrderCardSkeleton, OrderItemList, OrderStatusBadge, OrderTotals } from './OrderDetails'
+import { OrderCardSkeleton, OrderItemList, OrderStatusBadge, PaymentBadge } from './OrderDetails'
+import AddressBook from './AddressBook'
+import usePageMeta from '../hooks/usePageMeta'
 
 const TABS = [
   { id: 'details', label: 'Your details' },
   { id: 'orders', label: 'Order history' },
+  { id: 'addresses', label: 'Addresses' },
 ]
 
 const profileSchema = Yup.object({
@@ -99,13 +104,17 @@ function DetailsTab({ user }) {
   const bagCount = useSelector((state) => state.cart.items.reduce((total, item) => total + (item.quantity ?? 1), 0))
 
   const formik = useFormik({
-    initialValues: { firstName: user.firstName, lastName: user.lastName, phone: user.phone ?? '' },
+    initialValues: { firstName: user.firstName, lastName: user.lastName, phone: user.phone ?? '', marketingOptIn: Boolean(user.marketingOptIn) },
     validationSchema: profileSchema,
     enableReinitialize: true,
     onSubmit: async (values) => {
       try {
         await dispatch(
-          updateProfile({ name: `${values.firstName.trim()} ${values.lastName.trim()}`, phone: values.phone.trim() }),
+          updateProfile({
+            name: `${values.firstName.trim()} ${values.lastName.trim()}`,
+            phone: values.phone.trim(),
+            marketingOptIn: values.marketingOptIn,
+          }),
         ).unwrap()
       } catch {
         // The toast listener reports the error
@@ -130,6 +139,8 @@ function DetailsTab({ user }) {
     { to: '/wishlist', icon: FavoriteBorderRoundedIcon, label: 'Wishlist', meta: wishlistCount },
     { to: '/cart', icon: ShoppingBagOutlinedIcon, label: 'Your bag', meta: bagCount },
     { to: '/account?tab=orders', icon: ReceiptLongOutlinedIcon, label: 'Order history' },
+    { to: '/account?tab=addresses', icon: HomeOutlinedIcon, label: 'Saved addresses' },
+    { to: '/contact', icon: SupportAgentOutlinedIcon, label: 'Help & contact' },
   ]
 
   return (
@@ -149,6 +160,10 @@ function DetailsTab({ user }) {
             helperText="Contact our concierge to change the email on your account."
           />
           <TextField {...fieldProps('phone')} label="Phone number (optional)" type="tel" autoComplete="tel" />
+          <FormControlLabel
+            control={<Checkbox name="marketingOptIn" checked={formik.values.marketingOptIn} onChange={formik.handleChange} size="small" />}
+            label={<span className="text-sm">Email me about new arrivals and offers</span>}
+          />
         </div>
         <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           {formik.dirty && (
@@ -187,19 +202,20 @@ function DetailsTab({ user }) {
 }
 
 function OrderCard({ order }) {
-  const [open, setOpen] = useState(false)
   const pieces = order.items.reduce((total, item) => total + item.quantity, 0)
+  const url = `/account/orders/${order.id}`
 
   return (
     <article className="bg-surface p-6 ring-1 ring-line sm:p-8">
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-5">
         <div>
-          <p className="font-mono text-sm font-semibold tracking-wider">{orderNumber(order.id)}</p>
+          <Link to={url} className="font-mono text-sm font-semibold tracking-wider hover:text-gold">{orderNumber(order.id)}</Link>
           <p className="mt-1 text-sm text-stone">
             Placed {formatDate(order.createdAt)} · {pieces} {pieces === 1 ? 'piece' : 'pieces'}
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <PaymentBadge payment={order.payment} />
           <OrderStatusBadge status={order.status} />
           <span className="font-display text-2xl">{money(order.totalAmount)}</span>
         </div>
@@ -209,29 +225,22 @@ function OrderCard({ order }) {
         <OrderItemList items={order.items} />
       </div>
 
-      {open && (
-        <div className="mt-6 grid animate-fade-in gap-8 border-t border-line pt-6 sm:grid-cols-2">
-          <div className="text-sm leading-relaxed">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone">Shipping to</p>
-            <p className="mt-2 font-medium">{order.shippingAddress.fullName}</p>
-            <p className="text-stone">
-              {order.shippingAddress.address}, {order.shippingAddress.city}
-              <br />
-              {order.shippingAddress.state} {order.shippingAddress.zipCode}, {order.shippingAddress.country}
-            </p>
-          </div>
-          <OrderTotals order={order} />
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        className="mt-6 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone underline-offset-4 hover:text-ink hover:underline"
-      >
-        {open ? 'Hide details' : 'View details'}
-      </button>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-sm">
+        <p className="text-stone">
+          {order.status === 'shipped' && order.trackingNumber
+            ? `Shipped${order.carrier ? ` with ${order.carrier}` : ''} · ${order.trackingNumber}`
+            : order.status === 'delivered'
+              ? 'Delivered'
+              : order.status === 'cancelled'
+                ? 'Cancelled'
+                : order.estimatedDelivery
+                  ? `Estimated delivery ${formatDate(order.estimatedDelivery, { day: 'numeric', month: 'short' })}`
+                  : ''}
+        </p>
+        <Link to={url} className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.16em] underline-offset-4 hover:underline">
+          Details &amp; tracking <ChevronRightRoundedIcon sx={{ fontSize: 16 }} />
+        </Link>
+      </div>
     </article>
   )
 }
@@ -291,6 +300,7 @@ function OrdersTab() {
 }
 
 function Account() {
+  usePageMeta({ title: 'Your account', noindex: true })
   const user = useSelector((state) => state.auth.user)
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = TABS.some((item) => item.id === searchParams.get('tab')) ? searchParams.get('tab') : 'details'
@@ -326,7 +336,7 @@ function Account() {
         </nav>
       </header>
 
-      {tab === 'orders' ? <OrdersTab /> : <DetailsTab user={user} />}
+      {tab === 'orders' ? <OrdersTab /> : tab === 'addresses' ? <AddressBook /> : <DetailsTab user={user} />}
     </div>
   )
 }

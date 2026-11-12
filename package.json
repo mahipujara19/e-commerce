@@ -12,7 +12,9 @@
     "user:create": "node backend/scripts/createUser.js",
     "build": "vite build frontend",
     "lint": "oxlint",
-    "preview": "vite preview frontend"
+    "preview": "vite preview frontend",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -37,6 +39,7 @@
     "react-google-recaptcha": "^3.1.0",
     "react-redux": "^9.3.0",
     "react-router-dom": "^7.18.4",
+    "stripe": "^18.5.0",
     "yup": "^1.7.1"
   },
   "devDependencies": {
@@ -45,11 +48,22 @@
     "@vitejs/plugin-react": "^6.1.2",
     "autoprefixer": "^10.6.2",
     "concurrently": "^10.0.6",
+    "mongodb-memory-server": "^10.4.3",
     "nodemon": "^3.1.14",
     "oxlint": "^1.88.0",
     "postcss": "^8.5.32",
     "rollup-plugin-visualizer": "^7.1.1",
+    "supertest": "^7.3.2",
     "tailwindcss": "^3.4.19",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "vitest": "^3.2.7"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "config": {
+    "mongodbMemoryServer": {
+      "disablePostinstall": "1"
+    }
   }
 }

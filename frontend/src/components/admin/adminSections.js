@@ -5,6 +5,8 @@ import SellOutlinedIcon from '@mui/icons-material/SellOutlined'
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined'
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
+import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined'
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded'
 import { orderNumber } from '../../utils/format'
 import { STAFF_ROLES } from '../../utils/roles'
 
@@ -50,6 +52,20 @@ export const ADMIN_SECTIONS = [
     icon: PeopleAltOutlinedIcon,
     roles: STAFF_ROLES,
     component: lazy(() => import('./AdminCustomers.jsx')),
+  },
+  {
+    path: 'coupons',
+    label: 'Coupons',
+    icon: LocalOfferOutlinedIcon,
+    roles: ADMIN_ONLY,
+    component: lazy(() => import('./AdminCoupons.jsx')),
+  },
+  {
+    path: 'activity',
+    label: 'Activity',
+    icon: HistoryRoundedIcon,
+    roles: ADMIN_ONLY,
+    component: lazy(() => import('./AdminActivity.jsx')),
   },
   {
     path: 'team',

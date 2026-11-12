@@ -1,4 +1,4 @@
-// Creates an account with a given role, or changes the role of an existing one.
+// Creates an account with a given role, or updates an existing one: its role and, when --password is given, its password.
 // Usage: npm run user:create -- --email jo@example.com --password "Secret123!" --name "Jo Smith" --role staff
 import '../config/env.js'
 import { parseArgs } from 'node:util'
@@ -20,7 +20,7 @@ const run = async () => {
 
   await connectDb()
   await runMigrations()
-  await upsertUser(values)
+  await upsertUser({ ...values, resetPassword: true })
 }
 
 run()

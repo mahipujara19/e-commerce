@@ -5,7 +5,7 @@ import { Alert, CircularProgress, Rating, TextField } from '@mui/material'
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined'
 import { Link, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { submitReview } from '../toolkit/productslice'
+import { submitReview } from '../toolkit/productSlice'
 import { formatDate } from '../utils/format'
 import SectionHeading from './SectionHeading'
 

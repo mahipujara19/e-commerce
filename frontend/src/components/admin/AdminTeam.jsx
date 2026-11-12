@@ -9,25 +9,25 @@ import { useDispatch, useSelector } from 'react-redux'
 import useQueryParams from '../../hooks/useQueryParams'
 import { createUser, fetchCustomers, updateUserRole } from '../../toolkit/customerSlice'
 import { formatDate } from '../../utils/format'
-import { ROLE_LABELS, ROLES } from '../../utils/roles'
+import { ROLE_LABELS, STAFF_ROLES as TEAM_ROLES } from '../../utils/roles'
 import ConfirmDialog from '../ConfirmDialog'
 import { AdminEmpty, AdminPageHeader, DataTable, FilterChips, LoadError, SearchField, TableHead, TableSkeleton, Toolbar } from './AdminUI'
 
 const ROLE_NOTES = {
-  admin: 'Full access, including products and team management',
-  staff: 'Orders, inventory and customers; cannot edit the catalogue or the team',
-  customer: 'Storefront only',
+  admin: 'Full access, including products, coupons and team management',
+  staff: 'Orders, inventory and customers; cannot edit the catalogue, coupons or the team',
 }
 
+// Only admins and staff belong here; customer accounts are under Customers.
 const FILTERS = [
-  { id: '', label: 'Team', test: (user) => user.role !== 'customer' },
-  { id: 'customers', label: 'Customers', test: (user) => user.role === 'customer' },
-  { id: 'all', label: 'All accounts', test: () => true },
+  { id: '', label: 'Whole team', test: () => true },
+  { id: 'admin', label: 'Admins', test: (user) => user.role === 'admin' },
+  { id: 'staff', label: 'Staff', test: (user) => user.role === 'staff' },
 ]
 
 const COLUMNS = [{ label: 'Account' }, { label: 'Role' }, { label: 'Email status' }, { label: 'Joined' }]
 
-const paperSx = { borderRadius: 0, bgcolor: 'rgb(var(--ivory))', backgroundImage: 'none', width: '100%', maxWidth: 520, m: 2 }
+const paperSx = { borderRadius: 0, bgcolor: 'rgb(var(--ivory))', backgroundImage: 'none', width: 'calc(100% - 32px)', minWidth: 0, maxWidth: 520, m: 2 }
 
 // Mirrors the server's signup rules so mistakes are caught before submitting.
 const memberSchema = Yup.object({
@@ -39,7 +39,7 @@ const memberSchema = Yup.object({
     .matches(/[0-9]/, 'Password must contain at least one number')
     .matches(/[!@#$%^&*]/, 'Password must contain at least one special character (!@#$%^&*)')
     .required('Password is required'),
-  role: Yup.string().oneOf(ROLES).required(),
+  role: Yup.string().oneOf(TEAM_ROLES).required(),
 })
 
 function AddMemberDialog({ open, onClose }) {
@@ -92,7 +92,7 @@ function AddMemberDialog({ open, onClose }) {
           <TextField {...fieldProps('email')} label="Email address" type="email" autoComplete="off" />
           <TextField {...fieldProps('password')} label="Temporary password" type="password" autoComplete="new-password" />
           <TextField {...fieldProps('role')} select label="Role" helperText={ROLE_NOTES[formik.values.role]}>
-            {ROLES.map((role) => (
+            {TEAM_ROLES.map((role) => (
               <MenuItem key={role} value={role}>{ROLE_LABELS[role]}</MenuItem>
             ))}
           </TextField>
@@ -113,7 +113,8 @@ function AddMemberDialog({ open, onClose }) {
 // Admin only. Lists staff and admins, adds new ones, and promotes or demotes any account.
 function AdminTeam() {
   const dispatch = useDispatch()
-  const { items: accounts, status, error } = useSelector((state) => state.customers)
+  const { items: allAccounts, status, error } = useSelector((state) => state.customers)
+  const accounts = useMemo(() => allAccounts.filter((account) => TEAM_ROLES.includes(account.role)), [allAccounts])
   const currentUserId = useSelector((state) => state.auth.user?.id)
   const [params, setParams] = useQueryParams()
   const [adding, setAdding] = useState(false)
@@ -128,8 +129,8 @@ function AdminTeam() {
     return accounts.filter(filter.test).filter((account) => !term || `${account.name} ${account.email}`.toLowerCase().includes(term))
   }, [accounts, filter, query])
 
-  const loading = accounts.length === 0 && (status === 'idle' || status === 'loading')
-  const counts = Object.fromEntries(ROLES.map((role) => [role, accounts.filter((account) => account.role === role).length]))
+  const loading = allAccounts.length === 0 && (status === 'idle' || status === 'loading')
+  const counts = Object.fromEntries(TEAM_ROLES.map((role) => [role, accounts.filter((account) => account.role === role).length]))
 
   const confirmChange = async () => {
     setBusy(true)
@@ -147,7 +148,7 @@ function AdminTeam() {
     <>
       <AdminPageHeader
         title="Team"
-        description={loading ? 'Loading…' : `${counts.admin} admins · ${counts.staff} staff · ${counts.customer} customers`}
+        description={loading ? 'Loading…' : `${counts.admin} ${counts.admin === 1 ? 'admin' : 'admins'} · ${counts.staff} staff`}
         actions={
           <button type="button" onClick={() => setAdding(true)} className="btn-primary">
             <AddRoundedIcon sx={{ fontSize: 18 }} /> Add team member
@@ -173,8 +174,8 @@ function AdminTeam() {
         status !== 'failed' && (
           <AdminEmpty
             icon={AdminPanelSettingsOutlinedIcon}
-            title="No matching accounts"
-            description={filter.id === 'customers' ? 'Search for a customer to promote them.' : 'Try a different filter or search.'}
+            title="No matching team members"
+            description="Try a different filter or search, or add a team member."
           />
         )
       ) : (
@@ -200,7 +201,7 @@ function AdminTeam() {
                       sx={{ minWidth: 170, '& .MuiOutlinedInput-input': { py: 1 } }}
                       helperText={self ? 'You cannot change your own role' : undefined}
                     >
-                      {ROLES.map((role) => (
+                      {TEAM_ROLES.map((role) => (
                         <MenuItem key={role} value={role}>{ROLE_LABELS[role]}</MenuItem>
                       ))}
                     </TextField>

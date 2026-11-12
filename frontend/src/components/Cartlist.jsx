@@ -3,9 +3,11 @@ import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded'
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined'
+import { Alert } from '@mui/material'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
-import { changeQuantity, removeItem } from '../toolkit/slice'
+import usePageMeta from '../hooks/usePageMeta'
+import { changeQuantity, isPurchasable, removeItem, removeUnavailable } from '../toolkit/slice'
 import { cartTotals, formatCategory, money } from '../utils/format'
 import EmptyState from './EmptyState'
 import FreeShippingMeter from './FreeShippingMeter'
@@ -15,7 +17,11 @@ function Cartlist() {
   const dispatch = useDispatch()
   const cartItems = useSelector((state) => state.cart.items)
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
-  const { count, subtotal, shipping, tax, total } = cartTotals(cartItems)
+  const purchasable = cartItems.filter(isPurchasable)
+  const unavailableCount = cartItems.length - purchasable.length
+  const { count, subtotal, shipping, tax, total } = cartTotals(purchasable)
+
+  usePageMeta({ title: 'Your bag', noindex: true })
 
   if (cartItems.length === 0) {
     return (
@@ -40,12 +46,28 @@ function Cartlist() {
         <p className="text-sm text-stone">{count} {count === 1 ? 'item' : 'items'}</p>
       </header>
 
+      {unavailableCount > 0 && (
+        <Alert
+          severity="warning"
+          className="mt-8"
+          action={
+            <button type="button" onClick={() => dispatch(removeUnavailable())} className="whitespace-nowrap px-2 text-sm font-semibold underline">
+              Remove {unavailableCount === 1 ? 'it' : 'them'}
+            </button>
+          }
+        >
+          {unavailableCount === 1 ? 'One item in your bag is' : `${unavailableCount} items in your bag are`} no longer available and will not be ordered.
+        </Alert>
+      )}
+
       <div className="mt-10 grid gap-12 lg:grid-cols-[1fr_400px] lg:gap-16">
         <ul className="divide-y divide-line">
           {cartItems.map((item) => {
             const quantity = item.quantity ?? 1
+            const available = isPurchasable(item)
+            const lowStock = available && item.stock != null && item.stock <= 5
             return (
-              <li key={item.id} className="flex gap-5 py-8 first:pt-0 sm:gap-8">
+              <li key={item.id} className={`flex gap-5 py-8 first:pt-0 sm:gap-8 ${available ? '' : 'opacity-60'}`}>
                 <Link to={`/productitem/${item.id}`} className="h-36 w-28 shrink-0 bg-sand p-3 sm:h-44 sm:w-36">
                   <img src={item.thumbnail} alt={item.title} className="h-full w-full object-contain" />
                 </Link>
@@ -57,18 +79,27 @@ function Cartlist() {
                         {item.title}
                       </Link>
                       <p className="mt-1 text-sm text-stone">{money(item.price)} each</p>
+                      {!available && (
+                        <p className="mt-2 text-sm font-semibold text-red-700 dark:text-red-400">
+                          {item.unavailable ? 'No longer available' : 'Sold out'}
+                        </p>
+                      )}
+                      {available && item.adjusted && (
+                        <p className="mt-2 text-sm text-gold" role="status">Quantity reduced to the {item.stock} we have left</p>
+                      )}
+                      {lowStock && !item.adjusted && <p className="mt-2 text-sm text-gold">Only {item.stock} left</p>}
                     </div>
                     <p className="shrink-0 font-semibold">{money(item.price * quantity)}</p>
                   </div>
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-6">
-                    <QuantityControl
+                    {available ? <QuantityControl
                       size="sm"
                       value={quantity}
                       label={item.title}
                       onDecrease={() => dispatch(changeQuantity({ id: item.id, change: -1 }))}
                       onIncrease={() => dispatch(changeQuantity({ id: item.id, change: 1 }))}
                       canIncrease={item.stock == null || quantity < item.stock}
-                    />
+                    /> : <span />}
                     <button
                       type="button"
                       onClick={() => dispatch(removeItem(item))}
@@ -101,15 +132,19 @@ function Cartlist() {
             </dl>
 
             {!isAuthenticated && (
-              <p className="mt-6 flex items-start gap-3 bg-sand p-4 text-sm text-stone">
-                <LockOutlinedIcon sx={{ fontSize: 18 }} className="mt-0.5 text-ink" />
-                Sign in or create an account to complete your purchase.
+              <p className="mt-6 flex items-start gap-3 bg-sand p-4 text-sm leading-relaxed text-stone">
+                <LockOutlinedIcon sx={{ fontSize: 18 }} className="mt-0.5 shrink-0 text-ink" />
+                <span>
+                  Checkout needs a free account, so you can track delivery, cancel or return in a click. Your bag comes with you
+                  when you sign in.
+                </span>
               </p>
             )}
             <Link
               to={isAuthenticated ? '/checkout' : '/login'}
               state={isAuthenticated ? undefined : { from: '/checkout' }}
-              className="btn-primary mt-6 w-full"
+              className={`btn-primary mt-6 w-full ${purchasable.length ? '' : 'pointer-events-none opacity-40'}`}
+              aria-disabled={!purchasable.length}
             >
               {isAuthenticated ? 'Proceed to checkout' : 'Sign in to checkout'}
             </Link>
@@ -117,7 +152,7 @@ function Cartlist() {
 
             <ul className="mt-8 space-y-3 border-t border-line pt-6 text-xs text-stone">
               <li className="flex items-center gap-2"><LockOutlinedIcon sx={{ fontSize: 16 }} className="text-gold" /> Secure, encrypted checkout</li>
-              <li className="flex items-center gap-2"><AutorenewRoundedIcon sx={{ fontSize: 16 }} className="text-gold" /> 30-day returns</li>
+              <li className="flex items-center gap-2"><AutorenewRoundedIcon sx={{ fontSize: 16 }} className="text-gold" /> <Link to="/returns" className="hover:text-ink hover:underline">30-day returns</Link></li>
               <li className="flex items-center gap-2"><VerifiedOutlinedIcon sx={{ fontSize: 16 }} className="text-gold" /> Authenticity guaranteed</li>
             </ul>
           </div>

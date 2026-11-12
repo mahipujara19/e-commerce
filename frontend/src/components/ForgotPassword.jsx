@@ -6,12 +6,14 @@ import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined
 import { Link } from 'react-router-dom'
 import { api } from '../utils/api'
 import AuthLayout, { FormDivider } from './AuthLayout'
+import usePageMeta from '../hooks/usePageMeta'
 
 const forgotSchema = Yup.object({
   email: Yup.string().email('Please enter a valid email address').required('Email is required'),
 })
 
 function ForgotPassword() {
+  usePageMeta({ title: 'Reset your password', noindex: true })
   const [sentTo, setSentTo] = useState('')
   const [requestError, setRequestError] = useState('')
 

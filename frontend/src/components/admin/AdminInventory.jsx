@@ -8,7 +8,7 @@ import RemoveShoppingCartOutlinedIcon from '@mui/icons-material/RemoveShoppingCa
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
 import { useDispatch, useSelector } from 'react-redux'
 import useQueryParams from '../../hooks/useQueryParams'
-import { fetchproduct, updateStock } from '../../toolkit/productslice'
+import { fetchproduct, updateStock } from '../../toolkit/productSlice'
 import { formatCategory, LOW_STOCK_THRESHOLD, money, stockLevel } from '../../utils/format'
 import {
   AdminEmpty,

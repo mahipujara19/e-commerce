@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react'
 import { Alert } from '@mui/material'
 import SearchOffRoundedIcon from '@mui/icons-material/SearchOffRounded'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchproduct } from '../toolkit/productslice'
+import { fetchproduct } from '../toolkit/productSlice'
 import { setCategory, setSearchQuery } from '../toolkit/searchSlice'
-import { featuredRank, formatCategory } from '../utils/format'
+import { featuredRank, formatCategory, FREE_SHIPPING_TEXT } from '../utils/format'
 import EmptyState from './EmptyState'
 import ProductCard, { ProductCardSkeleton } from './ProductCard'
 import SectionHeading from './SectionHeading'
+import usePageMeta from '../hooks/usePageMeta'
 
 const SORT_OPTIONS = [
   { value: 'featured', label: 'Featured' },
@@ -28,6 +29,7 @@ const SORTERS = {
 const PAGE_SIZE = 12
 
 function Product() {
+  usePageMeta({ title: 'Shop all pieces', description: `Browse jewellery, watches, fragrance, bags and objects for the home. ${FREE_SHIPPING_TEXT} and 30-day returns.` })
   const dispatch = useDispatch()
   const { items: products, status, error } = useSelector((state) => state.products)
   const searchQuery = useSelector((state) => state.search.query)
@@ -89,7 +91,25 @@ function Product() {
           }
         />
 
-        <div className="-mx-5 mt-10 flex gap-2 overflow-x-auto px-5 pb-2 sm:mx-0 sm:flex-wrap sm:px-0" aria-label="Filter by category">
+        {/* Phones: one labelled dropdown instead of a long sideways-scrolling row of chips. */}
+        <div className="mt-8 sm:hidden">
+          <label htmlFor="category-filter" className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-stone">
+            Category
+          </label>
+          <select
+            id="category-filter"
+            value={activeCategory}
+            onChange={(event) => dispatch(setCategory(event.target.value))}
+            className="h-12 w-full cursor-pointer border border-line bg-surface px-4 text-sm outline-none focus:border-ink"
+          >
+            <option value="">All categories</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>{formatCategory(category)}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mt-10 hidden flex-wrap gap-2 sm:flex" role="group" aria-label="Filter by category">
           <button type="button" className={chipClass(activeCategory === '')} onClick={() => dispatch(setCategory(''))} aria-pressed={activeCategory === ''}>
             All
           </button>

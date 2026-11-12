@@ -6,8 +6,10 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { verifyEmail } from '../toolkit/authSlice'
 import AuthLayout from './AuthLayout'
+import usePageMeta from '../hooks/usePageMeta'
 
 function VerifyEmail() {
+  usePageMeta({ title: 'Verify your email', noindex: true })
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') ?? ''
   const dispatch = useDispatch()

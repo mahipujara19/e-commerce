@@ -1,8 +1,10 @@
 import { createListenerMiddleware } from '@reduxjs/toolkit'
 import { login, logout, sessionExpired, signup, updateProfile, verifyEmail } from './authSlice'
-import { updateOrderStatus } from './orderSlice'
+import { cancelMyOrder, updateOrderStatus } from './orderSlice'
+import { deleteAddress, saveAddress } from './addressSlice'
+import { createCoupon, deleteCoupon, updateCoupon } from './couponSlice'
 import { createUser, updateUserRole } from './customerSlice'
-import { createProduct, deleteProduct, submitReview, updateProduct, updateStock } from './productslice'
+import { createProduct, deleteProduct, submitReview, updateProduct, updateStock } from './productSlice'
 import { removeItem } from './slice'
 import { notify } from './toastSlice'
 import { toggleWishlist } from './wishlistSlice'
@@ -66,6 +68,25 @@ on(updateUserRole.rejected, onError)
 on(deleteProduct.fulfilled, { message: 'The product was deleted', severity: 'info' })
 on(deleteProduct.rejected, onError)
 
-on(updateOrderStatus.fulfilled, (action) => `Order marked as ${action.payload.status}`)
+on(updateOrderStatus.fulfilled, (action) =>
+  action.meta.arg.status ? `Order marked as ${action.payload.status}` : 'Shipping details saved',
+)
+on(cancelMyOrder.fulfilled, (action) =>
+  action.payload.payment?.status === 'refunded'
+    ? { message: 'Your order was cancelled and a refund has been issued', severity: 'info' }
+    : { message: 'Your order was cancelled', severity: 'info' },
+)
+on(cancelMyOrder.rejected, onError)
+
+on(saveAddress.fulfilled, (action) => (action.meta.arg.id ? 'Address updated' : 'Address saved'))
+on(saveAddress.rejected, onError)
+on(deleteAddress.fulfilled, { message: 'Address removed', severity: 'info' })
+on(deleteAddress.rejected, onError)
+
+on(createCoupon.fulfilled, (action) => `Coupon ${action.payload.code} created`)
+on(updateCoupon.fulfilled, (action) => `Coupon ${action.payload.code} updated`)
+on(updateCoupon.rejected, onError)
+on(deleteCoupon.fulfilled, { message: 'Coupon deleted', severity: 'info' })
+on(deleteCoupon.rejected, onError)
 on(updateOrderStatus.rejected, onError)
 on(updateProfile.rejected, onError)

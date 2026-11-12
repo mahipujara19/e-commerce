@@ -1,6 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import cartReducer from './slice'
-import productReducer from './productslice'
+import productReducer from './productSlice'
 import searchReducer from './searchSlice'
 import authReducer, { sessionExpired } from './authSlice'
 import uiReducer from './uiSlice'
@@ -8,7 +8,10 @@ import wishlistReducer from './wishlistSlice'
 import orderReducer from './orderSlice'
 import toastReducer from './toastSlice'
 import customerReducer from './customerSlice'
+import addressReducer from './addressSlice'
+import couponReducer from './couponSlice'
 import { toastListeners } from './toastListeners'
+import { analyticsListeners } from './analyticsListeners'
 import { setSessionExpiredHandler } from '../utils/api'
 
 // Configure the Redux store with all reducers:
@@ -20,6 +23,8 @@ import { setSessionExpiredHandler } from '../utils/api'
 // - orders: the user's order history and, for admins, every order
 // - toast: notifications shown by <Toaster />
 // - customers: every account with order stats, for the admin area
+// - addresses: the signed-in customer's saved shipping addresses
+// - coupons: promo codes, for the admin area
 const store = configureStore({
     reducer: {
         cart: cartReducer,
@@ -31,8 +36,10 @@ const store = configureStore({
         orders: orderReducer,
         toast: toastReducer,
         customers: customerReducer,
+        addresses: addressReducer,
+        coupons: couponReducer,
     },
-    middleware: (getDefaultMiddleware) => getDefaultMiddleware().prepend(toastListeners.middleware),
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().prepend(toastListeners.middleware, analyticsListeners.middleware),
 })
 
 setSessionExpiredHandler(() => store.dispatch(sessionExpired()))

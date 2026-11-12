@@ -40,6 +40,27 @@
     background: rgb(var(--ink));
     color: rgb(var(--ivory));
   }
+
+  /* Keyboard users always see where they are; mouse clicks do not leave a ring behind. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--gold));
+    outline-offset: 2px;
+  }
+
+  /* Respect the operating system's "reduce motion" setting. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 @layer components {
@@ -47,8 +68,13 @@
     @apply mx-auto w-full max-w-[1320px] px-5 sm:px-8 lg:px-10;
   }
 
+  /* Hidden until focused with the keyboard; jumps past the header to the page content. */
+  .skip-link {
+    @apply fixed left-3 top-3 z-[1700] -translate-y-24 bg-ink px-5 py-3 text-sm font-semibold text-ivory transition-transform focus:translate-y-0;
+  }
+
   .btn {
-    @apply inline-flex items-center justify-center gap-2 px-7 py-3.5 text-[12px] font-semibold uppercase tracking-[0.16em] transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-40;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-7 py-3.5 text-[12px] font-semibold uppercase tracking-[0.16em] transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-40;
   }
 
   .btn-primary {
