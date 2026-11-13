@@ -13,11 +13,13 @@ import {
   removeFromWishlist,
   resendVerification,
   updateAddress,
+  updatePreferences,
   updateProfile,
   updateUserRole,
 } from '../controllers/userController.js'
 import { adminOnly, protect, staffOnly } from '../middleware/authMiddleware.js'
 import { byIp, byUser, limitRequests } from '../middleware/rateLimit.js'
+import { countryRule, currencyRule } from '../utils/localeRules.js'
 import { validate } from '../middleware/validate.js'
 import { limiters } from '../utils/limiters.js'
 import { emailRule, nameRule, passwordRule, phoneRule } from './authRoutes.js'
@@ -38,6 +40,8 @@ router
 
 router.patch('/:id/role', adminOnly, [param('id').isMongoId().withMessage('Invalid user id'), roleRule()], validate, updateUserRole)
 
+// Country and display currency, e.g. from the currency switcher. Both optional; each is checked against the lists.
+router.patch('/me/preferences', [countryRule({ optional: true }), currencyRule()], validate, updatePreferences)
 router.route('/me').get(getProfile).put([nameRule(), phoneRule(), body('marketingOptIn').optional().isBoolean().toBoolean()], validate, updateProfile)
 // On top of the one-minute cooldown in the controller: caps emails per account and per IP over an hour.
 const RESEND_LIMIT_MESSAGE = 'Too many verification emails requested. Please try again later.'

@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import mongoose from 'mongoose'
 import { DEFAULT_ROLE, ROLES } from '../config/roles.js'
+import { SUPPORTED_CURRENCIES } from '../../shared/currencies.js'
 import { jsonOptions } from '../utils/jsonTransform.js'
 
 export const SALT_ROUNDS = 12
@@ -58,6 +59,11 @@ const userSchema = new mongoose.Schema(
       validate: { validator: (list) => list.length <= MAX_ADDRESSES, message: `You can save up to ${MAX_ADDRESSES} addresses` },
     },
     marketingOptIn: { type: Boolean, default: false },
+    // Chosen at sign-up. Optional here because older accounts have neither; the store then falls back to the
+    // country's currency, then the store currency (shared/currencies.js preferredCurrency).
+    country: { type: String, trim: true, maxlength: 100 },
+    // Display currency only: orders are always charged in the store currency.
+    currency: { type: String, uppercase: true, trim: true, enum: SUPPORTED_CURRENCIES },
   },
   {
     timestamps: true,

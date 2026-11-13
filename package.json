@@ -12,7 +12,8 @@
     "user:create": "node backend/scripts/createUser.js",
     "build": "vite build frontend",
     "lint": "oxlint",
-    "preview": "vite preview frontend"
+    "preview": "vite preview frontend",
+    "test": "node --test \"shared/**/*.test.js\" \"backend/tests/**/*.test.js\" \"frontend/src/**/*.test.js\""
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

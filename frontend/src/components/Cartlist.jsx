@@ -8,10 +8,11 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import usePageMeta from '../hooks/usePageMeta'
 import { changeQuantity, isPurchasable, removeItem, removeUnavailable } from '../toolkit/slice'
-import { cartTotals, formatCategory, money } from '../utils/format'
+import { cartTotals, formatCategory } from '../utils/format'
 import EmptyState from './EmptyState'
 import FreeShippingMeter from './FreeShippingMeter'
 import QuantityControl from './QuantityControl'
+import Price, { CurrencyNote } from './Price'
 
 function Cartlist() {
   const dispatch = useDispatch()
@@ -78,7 +79,7 @@ function Cartlist() {
                       <Link to={`/productitem/${item.id}`} className="mt-1.5 block font-display text-xl leading-snug hover:text-gold">
                         {item.title}
                       </Link>
-                      <p className="mt-1 text-sm text-stone">{money(item.price)} each</p>
+                      <p className="mt-1 text-sm text-stone"><Price value={item.price} /> each</p>
                       {!available && (
                         <p className="mt-2 text-sm font-semibold text-red-700 dark:text-red-400">
                           {item.unavailable ? 'No longer available' : 'Sold out'}
@@ -89,7 +90,7 @@ function Cartlist() {
                       )}
                       {lowStock && !item.adjusted && <p className="mt-2 text-sm text-gold">Only {item.stock} left</p>}
                     </div>
-                    <p className="shrink-0 font-semibold">{money(item.price * quantity)}</p>
+                    <p className="shrink-0 font-semibold"><Price value={item.price * quantity} /></p>
                   </div>
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-6">
                     {available ? <QuantityControl
@@ -122,14 +123,22 @@ function Cartlist() {
               <FreeShippingMeter subtotal={subtotal} />
             </div>
             <dl className="mt-8 space-y-3 text-sm">
-              <div className="flex justify-between"><dt className="text-stone">Subtotal</dt><dd>{money(subtotal)}</dd></div>
-              <div className="flex justify-between"><dt className="text-stone">Shipping</dt><dd>{shipping === 0 ? 'Complimentary' : money(shipping)}</dd></div>
-              <div className="flex justify-between"><dt className="text-stone">Estimated tax (8%)</dt><dd>{money(tax)}</dd></div>
+              <div className="flex justify-between"><dt className="text-stone">Subtotal</dt><dd><Price value={subtotal} /></dd></div>
+              <div className="flex justify-between">
+                <dt className="text-stone">Estimated shipping</dt>
+                <dd aria-describedby="shipping-estimate-note">{shipping === 0 ? 'Complimentary' : <Price value={shipping} />}</dd>
+              </div>
+              <div className="flex justify-between"><dt className="text-stone">Estimated tax (8%)</dt><dd><Price value={tax} /></dd></div>
               <div className="flex items-baseline justify-between border-t border-line pt-4">
                 <dt className="font-semibold uppercase tracking-[0.14em]">Total</dt>
-                <dd className="font-display text-3xl">{money(total)}</dd>
+                <dd className="font-display text-3xl"><Price value={total} /></dd>
               </div>
             </dl>
+            {/* The bag uses the flat store rates; checkout prices shipping for the actual delivery address. */}
+            <p id="shipping-estimate-note" className="mt-4 text-xs leading-relaxed text-stone">
+              Shipping is an estimate and may change based on your delivery address. Your final shipping cost will be shown at checkout.
+            </p>
+            <CurrencyNote className="mt-2" />
 
             {!isAuthenticated && (
               <p className="mt-6 flex items-start gap-3 bg-sand p-4 text-sm leading-relaxed text-stone">

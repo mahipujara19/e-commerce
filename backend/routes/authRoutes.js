@@ -12,6 +12,7 @@ import {
 import { byIp, limitRequests } from '../middleware/rateLimit.js'
 import { validate } from '../middleware/validate.js'
 import { limiters } from '../utils/limiters.js'
+import { countryRule, currencyRule } from '../utils/localeRules.js'
 import { requireCaptcha } from '../utils/recaptcha.js'
 
 const router = Router()
@@ -48,7 +49,15 @@ export const passwordRule = () =>
 const tokenRule = () =>
   body('token').isString().isHexadecimal().isLength({ min: 64, max: 64 }).withMessage('This link is invalid or has expired')
 
-const signupRules = [nameRule(), emailRule(), phoneRule(), passwordRule(), body('marketingOptIn').optional().isBoolean().toBoolean()]
+const signupRules = [
+  nameRule(),
+  emailRule(),
+  phoneRule(),
+  passwordRule(),
+  countryRule(),
+  currencyRule(),
+  body('marketingOptIn').optional().isBoolean().toBoolean(),
+]
 
 const signupIpLimit = limitRequests({
   limiter: limiters.signupIp,

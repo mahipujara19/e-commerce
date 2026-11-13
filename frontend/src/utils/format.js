@@ -29,6 +29,15 @@ const wholeMoneyFormat = new Intl.NumberFormat(LOCALE, { style: 'currency', curr
 export const money = (value) => moneyFormat.format(Number(value) || 0)
 // Round amounts in sentences, e.g. "free shipping over ₹999" (keeps decimals only when there are some).
 export const moneyShort = (value) => (Number.isInteger(Number(value)) ? wholeMoneyFormat : moneyFormat).format(Number(value) || 0)
+// Any supported currency, for converted display prices (see hooks/useMoney.js). One formatter per currency.
+const formatters = new Map()
+export const formatMoneyIn = (value, currency) => {
+  if (!formatters.has(currency)) {
+    formatters.set(currency, new Intl.NumberFormat(currency === 'INR' ? 'en-IN' : 'en-US', { style: 'currency', currency }))
+  }
+  return formatters.get(currency).format(Number(value) || 0)
+}
+
 // "Free shipping over $75", used across the store.
 export const FREE_SHIPPING_TEXT = `Free shipping over ${moneyShort(FREE_SHIPPING_MINIMUM)}`
 

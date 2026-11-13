@@ -170,7 +170,7 @@ function Product() {
         <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-5 md:grid-cols-3 xl:grid-cols-4">
           {loading
             ? Array.from({ length: 8 }, (_, index) => <ProductCardSkeleton key={index} />)
-            : visibleProducts.map((product) => <ProductCard key={product.id} product={product} />)}
+            : visibleProducts.map((product, index) => <ProductCard key={product.id} product={product} index={index} />)}
         </div>
 
         {visibleCount < filteredProducts.length && (

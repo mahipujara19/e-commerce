@@ -4,9 +4,10 @@ import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { changeQuantity, clearItem, removeItem } from '../toolkit/slice'
-import { cartTotals, formatCategory, money } from '../utils/format'
+import { cartTotals, formatCategory } from '../utils/format'
 import QuantityControl from './QuantityControl'
 import FreeShippingMeter from './FreeShippingMeter'
+import Price, { CurrencyNote } from './Price'
 
 function Addtocart({ onClose }) {
   const dispatch = useDispatch()
@@ -60,7 +61,7 @@ function Addtocart({ onClose }) {
                           {item.title}
                         </Link>
                       </div>
-                      <p className="shrink-0 text-sm font-semibold">{money(item.price * quantity)}</p>
+                      <p className="shrink-0 text-sm font-semibold"><Price value={item.price * quantity} /></p>
                     </div>
                     <div className="mt-auto flex items-center justify-between pt-3">
                       <QuantityControl
@@ -88,9 +89,10 @@ function Addtocart({ onClose }) {
           <div className="border-t border-line bg-surface px-6 py-6">
             <div className="flex items-baseline justify-between">
               <span className="text-sm uppercase tracking-[0.16em] text-stone">Subtotal</span>
-              <span className="font-display text-2xl">{money(subtotal)}</span>
+              <Price value={subtotal} className="font-display text-2xl" />
             </div>
             <p className="mt-1 text-xs text-stone">Shipping and taxes calculated at checkout.</p>
+            <CurrencyNote className="mt-1" />
             <Link
               to={isAuthenticated ? '/checkout' : '/login'}
               state={isAuthenticated ? undefined : { from: '/checkout' }}

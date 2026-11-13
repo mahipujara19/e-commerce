@@ -53,7 +53,8 @@ const saveSession = (state) => {
 }
 
 // The API stores a single name; the UI greets users by first name.
-const toSessionUser = ({ id, name, email, phone, role, emailVerified, marketingOptIn, createdAt }) => {
+// country and currency are missing on older accounts; the currency slice then falls back (shared/currencies.js).
+const toSessionUser = ({ id, name, email, phone, role, emailVerified, marketingOptIn, createdAt, country, currency }) => {
   const [firstName, ...rest] = name.trim().split(/\s+/)
   return {
     id,
@@ -65,6 +66,8 @@ const toSessionUser = ({ id, name, email, phone, role, emailVerified, marketingO
     emailVerified: Boolean(emailVerified),
     marketingOptIn: Boolean(marketingOptIn),
     createdAt,
+    country: country ?? null,
+    currency: currency ?? null,
   }
 }
 

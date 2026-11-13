@@ -12,6 +12,7 @@ import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import useLocationAddress from '../hooks/useLocationAddress'
+import useMoney from '../hooks/useMoney'
 import useOrderQuote from '../hooks/useOrderQuote'
 import usePageMeta from '../hooks/usePageMeta'
 import { fetchAddresses } from '../toolkit/addressSlice'
@@ -173,6 +174,8 @@ function CheckoutForm() {
   const [quoteAddress, setQuoteAddress] = useState(null)
   const { quote, loading: quoteLoading, error: quoteError, refresh: refreshQuote } = useOrderQuote(purchasable, couponCode, quoteAddress)
   const offers = useCouponOffers()
+  // Checkout always shows and charges the store currency; a chosen display currency is only an extra estimate.
+  const display = useMoney()
   const local = cartTotals(purchasable)
   const totals = quote
     ? { subtotal: quote.subtotal, discount: quote.discount, shipping: quote.shipping, tax: quote.tax, total: quote.totalAmount }
@@ -586,6 +589,12 @@ function CheckoutForm() {
                 <dd className="font-display text-3xl">{quoteLoading ? <CircularProgress size={20} color="inherit" /> : money(totals.total)}</dd>
               </div>
             </dl>
+            {display.converted && !quoteLoading && (
+              <p className="mt-3 text-xs leading-relaxed text-stone">
+                About {display.format(totals.total)} in {display.currency}. You are charged {money(totals.total)} in {display.storeCurrency}; your
+                bank sets the final exchange rate.
+              </p>
+            )}
             {quote?.pricing?.estimated && (
               <p className="mt-3 text-xs text-stone">Shipping and tax are estimates until your delivery address is complete.</p>
             )}

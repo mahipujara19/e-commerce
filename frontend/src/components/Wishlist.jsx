@@ -63,8 +63,8 @@ function Wishlist() {
         )
       ) : (
         <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-5 md:grid-cols-3 xl:grid-cols-4">
-          {saved.map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {saved.map((product, index) => (
+            <ProductCard key={product.id} product={product} index={index} />
           ))}
         </div>
       )}

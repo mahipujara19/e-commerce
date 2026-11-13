@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Rating } from '@mui/material'
 import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded'
 import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded'
@@ -6,10 +7,13 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { addItem } from '../toolkit/slice'
 import { openCart } from '../toolkit/uiSlice'
-import { formatCategory, money, originalPrice } from '../utils/format'
+import { formatCategory, originalPrice } from '../utils/format'
 import useWishlist from '../hooks/useWishlist'
+import Reveal from './Reveal'
+import Price from './Price'
 
-function ProductCard({ product }) {
+// index: position in its grid, so cards in a row fade in one after another.
+function ProductCard({ product, index = 0 }) {
   const dispatch = useDispatch()
   const { saved: liked, toggle: toggleLiked } = useWishlist(product.id)
   const inBag = useSelector((state) => state.cart.items.find((item) => item.id === product.id)?.quantity ?? 0)
@@ -17,6 +21,15 @@ function ProductCard({ product }) {
   const original = originalPrice(product)
   const soldOut = product.stock != null && inBag >= product.stock
   const productUrl = `/productitem/${product.id}`
+  // A second photo shown on hover, loaded only once a mouse first hovers the card.
+  const altImage = product.images?.find((src) => src && src !== product.thumbnail && src !== product.images[0]) ?? product.images?.[1]
+  const [showAlt, setShowAlt] = useState(false)
+  const [heartPops, setHeartPops] = useState(0)
+
+  const handleLike = () => {
+    toggleLiked()
+    setHeartPops((count) => count + 1)
+  }
 
   const handleQuickAdd = () => {
     dispatch(addItem({ ...product, quantity: 1 }))
@@ -24,16 +37,27 @@ function ProductCard({ product }) {
   }
 
   return (
-    <article className="group flex flex-col">
-      <div className="relative aspect-[4/5] overflow-hidden bg-sand">
+    <Reveal as="article" delay={(index % 4) * 90} className="group flex flex-col">
+      <div
+        className="relative aspect-[4/5] overflow-hidden bg-sand transition-[box-shadow,transform] duration-500 ease-out group-hover:-translate-y-1.5 group-hover:shadow-[0_28px_50px_-30px_rgba(0,0,0,0.5)]"
+        onPointerEnter={(event) => event.pointerType === 'mouse' && altImage && setShowAlt(true)}
+      >
         <Link to={productUrl} aria-label={`View ${product.title}`} className="block h-full w-full">
           <img
             src={product.thumbnail}
             alt={product.title}
             loading="lazy"
-            className="h-full w-full object-contain p-5 transition-transform duration-700 ease-out group-hover:scale-105 sm:p-8"
+            className={`h-full w-full object-contain p-5 transition duration-700 ease-out group-hover:scale-105 sm:p-8 ${showAlt ? 'group-hover:opacity-0' : ''}`}
           />
+          {showAlt && (
+            <img
+              src={altImage}
+              alt=""
+              className="absolute inset-0 h-full w-full scale-95 object-contain p-5 opacity-0 transition duration-700 ease-out group-hover:scale-105 group-hover:opacity-100 sm:p-8"
+            />
+          )}
         </Link>
+        <span className="card-shine" aria-hidden="true" />
 
         {discount >= 10 && (
           <span className="absolute left-2.5 top-2.5 bg-ink sm:left-3 sm:top-3 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-ivory">
@@ -43,16 +67,18 @@ function ProductCard({ product }) {
 
         <button
           type="button"
-          onClick={toggleLiked}
+          onClick={handleLike}
           aria-pressed={liked}
           aria-label={`${liked ? 'Remove' : 'Save'} ${product.title} ${liked ? 'from' : 'to'} wishlist`}
-          className="absolute right-2.5 top-2.5 grid h-9 w-9 place-items-center rounded-full bg-surface/90 text-ink shadow-sm transition hover:bg-surface sm:right-3 sm:top-3"
+          className="absolute right-2.5 top-2.5 grid h-9 w-9 place-items-center rounded-full bg-surface/90 text-ink shadow-sm transition hover:scale-110 hover:bg-surface sm:right-3 sm:top-3"
         >
-          {liked ? (
-            <FavoriteRoundedIcon sx={{ fontSize: 18 }} className="text-gold" />
-          ) : (
-            <FavoriteBorderRoundedIcon sx={{ fontSize: 18 }} />
-          )}
+          <span key={heartPops} className={`inline-flex ${heartPops ? 'animate-heart-pop' : ''}`}>
+            {liked ? (
+              <FavoriteRoundedIcon sx={{ fontSize: 18 }} className="text-gold" />
+            ) : (
+              <FavoriteBorderRoundedIcon sx={{ fontSize: 18 }} />
+            )}
+          </span>
         </button>
 
         <button
@@ -81,13 +107,13 @@ function ProductCard({ product }) {
           <span className="text-xs text-stone">({product.reviews?.length ?? 0})</span>
         </div>
         <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
-          <span className="text-sm font-semibold sm:text-[15px]">{money(product.price)}</span>
+          <Price value={product.price} className="text-sm font-semibold sm:text-[15px]" />
           {original && discount >= 10 && (
-            <span className="text-xs text-stone line-through sm:text-sm">{money(original)}</span>
+            <Price value={original} className="text-xs text-stone line-through sm:text-sm" />
           )}
         </div>
       </div>
-    </article>
+    </Reveal>
   )
 }
 

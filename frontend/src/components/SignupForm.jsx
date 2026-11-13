@@ -2,14 +2,17 @@ import { useRef, useState } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import ReCAPTCHA from 'react-google-recaptcha'
-import { Alert, Checkbox, CircularProgress, FormControlLabel, IconButton, InputAdornment, TextField } from '@mui/material'
+import { Alert, Checkbox, CircularProgress, FormControlLabel, IconButton, InputAdornment, MenuItem, TextField } from '@mui/material'
 import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded'
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded'
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
+import { currencyForCountry } from '../../../shared/currencies.js'
 import { signup } from '../toolkit/authSlice'
+import { COUNTRIES } from '../utils/countries'
+import { CURRENCY } from '../utils/format'
 import AuthLayout, { FormDivider } from './AuthLayout'
 import usePageMeta from '../hooks/usePageMeta'
 
@@ -42,6 +45,8 @@ const signupSchema = Yup.object({
   phone: Yup.string()
     .matches(/^\+?[\d\s\-()]{7,15}$/, 'Please enter a valid phone number')
     .optional(),
+  // The server checks it again against the same list.
+  country: Yup.string().oneOf(COUNTRIES, 'Please choose a country from the list').required('Please choose your country'),
 })
 
 // Public site key from the Google reCAPTCHA registration; its secret key is RECAPTCHA_SECRET_KEY on the server.
@@ -88,6 +93,7 @@ function SignupForm() {
       password: '',
       confirmPassword: '',
       phone: '',
+      country: '',
       website: '',
       marketingOptIn: false,
     },
@@ -112,6 +118,7 @@ function SignupForm() {
             name: `${values.firstName.trim()} ${values.lastName.trim()}`,
             email: values.email.trim(),
             phone: values.phone,
+            country: values.country,
             password: values.password,
             marketingOptIn: values.marketingOptIn,
             captchaToken: captchaToken || undefined,
@@ -128,6 +135,8 @@ function SignupForm() {
       }
     },
   })
+
+  const countryCurrency = currencyForCountry(formik.values.country)
 
   const fieldProps = (name) => {
     const invalid = formik.touched[name] && Boolean(formik.errors[name])
@@ -200,6 +209,24 @@ function SignupForm() {
         </div>
         <TextField {...fieldProps('email')} label="Email address" type="email" autoComplete="email" />
         <TextField {...fieldProps('phone')} label="Phone number (optional)" type="tel" autoComplete="tel" />
+
+        <div>
+          <TextField {...fieldProps('country')} label="Country" select required fullWidth autoComplete="country-name">
+            {COUNTRIES.map((country) => (
+              <MenuItem key={country} value={country}>{country}</MenuItem>
+            ))}
+          </TextField>
+          {/* Read-only: the account gets the country's currency; the top-bar currency menu can change it later. */}
+          <p className="mt-2 text-xs leading-relaxed text-stone" aria-live="polite">
+            {countryCurrency && (
+              <>
+                Prices will be shown in {countryCurrency}.
+                {countryCurrency !== CURRENCY && ` Orders are charged in ${CURRENCY}.`} You can change this anytime from the currency
+                menu at the top of the page.
+              </>
+            )}
+          </p>
+        </div>
 
         <div>
           <TextField

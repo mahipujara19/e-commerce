@@ -39,8 +39,10 @@ prompt.txt
 *.md
 !README.md
 
+
 fixweb.txt
 e-com.txt
+help/
 
 # Test output and Playwright files: testing is removed for now; these keep any future test files out of git.
 e2e/

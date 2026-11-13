@@ -9,6 +9,7 @@ import { isDbConnected } from './config/db.js'
 import { env } from './config/env.js'
 import { razorpayWebhook, stripeWebhook } from './controllers/paymentController.js'
 import couponRoutes from './routes/couponRoutes.js'
+import currencyRoutes from './routes/currencyRoutes.js'
 import { issueCsrfToken, verifyCsrf } from './middleware/csrf.js'
 import { errorHandler, notFound, requireDb } from './middleware/errorHandler.js'
 import adminRoutes from './routes/adminRoutes.js'
@@ -184,6 +185,7 @@ export const createApp = () => {
   app.use('/api/users', requireDb, userRoutes)
   app.use('/api/admin', requireDb, adminRoutes)
   app.use('/api/coupons', requireDb, couponRoutes)
+  app.use('/api/currency', currencyRoutes)
   app.use('/api', supportRoutes)
 
   // Private pages are also marked noindex in the page itself.

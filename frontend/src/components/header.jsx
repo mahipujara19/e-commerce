@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Badge, Divider, Drawer, IconButton, Menu, MenuItem } from '@mui/material'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded'
@@ -14,6 +14,7 @@ import { setSearchQuery } from '../toolkit/searchSlice'
 import { logout } from '../toolkit/authSlice'
 import { openCart, toggleTheme } from '../toolkit/uiSlice'
 import { FREE_SHIPPING_MINIMUM, moneyShort } from '../utils/format'
+import CurrencySwitcher from './CurrencySwitcher'
 
 const navLinkClass = (isActive) =>
   `relative py-2 text-[12px] font-semibold uppercase tracking-[0.18em] transition-colors hover:text-gold after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:bg-current after:transition-transform after:duration-300 ${
@@ -42,6 +43,16 @@ function Header() {
   const wishlistCount = useSelector((state) => state.wishlist.ids.length)
 
   const [menuOpen, setMenuOpen] = useState(false)
+  // The bag icon bounces whenever its count changes after the page loads.
+  const [initialCount] = useState(itemCount)
+  // A soft shadow under the header once the page is scrolled.
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
   const [searchOpen, setSearchOpen] = useState(false)
   const [accountAnchor, setAccountAnchor] = useState(null)
 
@@ -67,14 +78,21 @@ function Header() {
 
   return (
     <>
-      <div className="bg-night px-4 py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.22em] text-cream/90 sm:text-[11px]">
-        Complimentary shipping over {moneyShort(FREE_SHIPPING_MINIMUM)}
-        <span className="hidden sm:inline">
-          <span className="mx-2 text-gold-light">✦</span> 30-day returns
+      <div className="relative bg-night px-4 py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.22em] text-cream/90 sm:text-[11px]">
+        <span className="pr-16 sm:pr-0">
+          Complimentary shipping over {moneyShort(FREE_SHIPPING_MINIMUM)}
+          <span className="hidden sm:inline">
+            <span className="mx-2 text-gold-light">✦</span> 30-day returns
+          </span>
         </span>
+        <CurrencySwitcher className="absolute right-3 top-1/2 -translate-y-1/2 sm:right-6" />
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-line bg-ivory/90 backdrop-blur-md">
+      <header
+        className={`sticky top-0 z-40 border-b backdrop-blur-md transition-all duration-500 ${
+          scrolled ? 'border-line/60 bg-ivory/80 shadow-[0_12px_40px_-24px_rgba(0,0,0,0.35)]' : 'border-line bg-ivory/90'
+        }`}
+      >
         <div className="container-x grid h-[72px] grid-cols-[1fr_auto_1fr] items-center md:h-20">
           <div className="flex items-center gap-9">
             <IconButton className="lg:hidden" edge="start" onClick={() => setMenuOpen(true)} aria-label="Open menu">
@@ -165,7 +183,9 @@ function Header() {
 
             <IconButton onClick={() => dispatch(openCart())} aria-label={`Open bag, ${itemCount} items`}>
               <Badge badgeContent={itemCount} color="primary" max={99}>
-                <ShoppingBagOutlinedIcon />
+                <span key={itemCount} className={`inline-flex ${itemCount !== initialCount ? 'animate-bump' : ''}`}>
+                  <ShoppingBagOutlinedIcon />
+                </span>
               </Badge>
             </IconButton>
           </div>

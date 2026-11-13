@@ -1,5 +1,6 @@
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined'
-import { FREE_SHIPPING_MINIMUM, money } from '../utils/format'
+import { FREE_SHIPPING_MINIMUM } from '../utils/format'
+import Price from './Price'
 
 function FreeShippingMeter({ subtotal }) {
   const remaining = Math.max(FREE_SHIPPING_MINIMUM - subtotal, 0)
@@ -11,7 +12,7 @@ function FreeShippingMeter({ subtotal }) {
         <LocalShippingOutlinedIcon sx={{ fontSize: 18 }} className="text-gold" />
         {remaining > 0 ? (
           <span>
-            You&apos;re <strong>{money(remaining)}</strong> away from complimentary shipping
+            You&apos;re <strong><Price value={remaining} /></strong> away from complimentary shipping
           </span>
         ) : (
           <strong>You&apos;ve unlocked complimentary shipping</strong>

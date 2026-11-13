@@ -13,7 +13,7 @@ import { Link, useParams } from 'react-router-dom'
 import { addItem } from '../toolkit/slice'
 import { fetchproduct } from '../toolkit/productSlice'
 import { openCart } from '../toolkit/uiSlice'
-import { CURRENCY, formatCategory, FREE_SHIPPING_MINIMUM, money, moneyShort, originalPrice } from '../utils/format'
+import { CURRENCY, formatCategory, FREE_SHIPPING_MINIMUM, moneyShort, originalPrice } from '../utils/format'
 import useWishlist from '../hooks/useWishlist'
 import usePageMeta from '../hooks/usePageMeta'
 import { gaItem, trackEvent } from '../utils/analytics'
@@ -22,6 +22,7 @@ import ProductCard from './ProductCard'
 import ProductReviews from './ProductReviews'
 import QuantityControl from './QuantityControl'
 import SectionHeading from './SectionHeading'
+import Price, { CurrencyNote } from './Price'
 
 const accordionSx = {
   bgcolor: 'transparent',
@@ -209,16 +210,17 @@ function ProductItem({ id }) {
           </a>
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
-            <span className="font-display text-4xl">{money(product.price)}</span>
+            <Price value={product.price} className="font-display text-4xl" />
             {original && discount >= 1 && (
               <>
-                <span className="text-lg text-stone line-through">{money(original)}</span>
+                <Price value={original} className="text-lg text-stone line-through" />
                 <span className="bg-gold-soft px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-gold">
                   Save {discount}%
                 </span>
               </>
             )}
           </div>
+          <CurrencyNote className="mt-2" />
 
           <p className="mt-6 leading-relaxed text-stone">{product.description}</p>
 
@@ -248,7 +250,7 @@ function ProductItem({ id }) {
                 inStock ? 'In your bag' : 'Out of stock'
               ) : (
                 <span className="truncate">
-                  Add to bag<span className="hidden sm:inline"> · {money(product.price * quantity)}</span>
+                  Add to bag<span className="hidden sm:inline"> · <Price value={product.price * quantity} /></span>
                 </span>
               )}
             </button>
@@ -309,8 +311,8 @@ function ProductItem({ id }) {
         <section className="mt-16 md:mt-24" aria-labelledby="related-title">
           <SectionHeading id="related-title" title="You may also like" />
           <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-5 md:grid-cols-4">
-            {related.map((item) => (
-              <ProductCard key={item.id} product={item} />
+            {related.map((item, index) => (
+              <ProductCard key={item.id} product={item} index={index} />
             ))}
           </div>
         </section>

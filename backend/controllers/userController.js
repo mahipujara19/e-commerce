@@ -111,6 +111,19 @@ export const updateProfile = async (req, res, next) => {
   }
 }
 
+// Saves the customer's country and/or display currency. Only validated, supported values reach this point.
+export const updatePreferences = async (req, res, next) => {
+  try {
+    const { country, currency } = matchedData(req, { locations: ['body'] })
+    if (country !== undefined) req.user.country = country
+    if (currency) req.user.currency = currency
+    await req.user.save()
+    sendSuccess(res, { message: 'Preferences saved', data: req.user })
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const resendVerification = async (req, res, next) => {
   try {
     await resendVerificationEmail(req.user)

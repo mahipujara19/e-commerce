@@ -5,6 +5,7 @@ import { Drawer } from '@mui/material'
 import Header from './header.jsx'
 import Footer from './Footer.jsx'
 import PageLoader from './PageLoader.jsx'
+import ScrollProgress from './ScrollProgress.jsx'
 import { closeCart } from '../toolkit/uiSlice'
 import { isStaff } from '../utils/roles'
 
@@ -39,10 +40,14 @@ function StorefrontLayout({ children }) {
   return (
     <>
       <a href="#main-content" className="skip-link">Skip to content</a>
+      <ScrollProgress />
       <div className="flex min-h-screen flex-col">
         <Header />
         <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
-          <Suspense fallback={<PageLoader />}>{children ?? <Outlet />}</Suspense>
+          {/* Keyed by page, so each new page fades in. */}
+          <div key={pathname} className="animate-page-in">
+            <Suspense fallback={<PageLoader />}>{children ?? <Outlet />}</Suspense>
+          </div>
         </main>
         <Footer />
       </div>

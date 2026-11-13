@@ -5,6 +5,7 @@ import { LOGIN_POLICY } from '../config/security.js'
 import User, { SALT_ROUNDS } from '../models/User.js'
 import { ApiError, sendSuccess } from '../utils/apiResponse.js'
 import { clientIp } from '../utils/clientIp.js'
+import { resolveCurrency } from '../utils/localeRules.js'
 import {
   ACCESS_TOKEN_MAX_AGE_MS,
   generateAccessToken,
@@ -114,14 +115,23 @@ export const resendVerificationEmail = async (user) => {
 
 export const signup = async (req, res, next) => {
   try {
-    const { name, email, password, phone, marketingOptIn } = req.body
+    const { name, email, password, phone, marketingOptIn, country, currency } = req.body
 
     if (await User.exists({ email })) {
       throw new ApiError(409, 'An account with this email already exists')
     }
 
     // role is deliberately not read from the request: staff and admins are created by an admin or the seed scripts.
-    const user = await User.create({ name, email, password, phone: phone || undefined, marketingOptIn: marketingOptIn === true })
+    // country and currency were validated by the signup rules; a missing currency becomes the country's.
+    const user = await User.create({
+      name,
+      email,
+      password,
+      phone: phone || undefined,
+      marketingOptIn: marketingOptIn === true,
+      country,
+      currency: resolveCurrency({ country, currency, storeCurrency: env.payments.currency }),
+    })
     const data = await startSession(res, user)
 
     // The account is usable either way; the user can request a new link from their profile.

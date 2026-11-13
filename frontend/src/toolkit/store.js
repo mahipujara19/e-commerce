@@ -10,6 +10,8 @@ import toastReducer from './toastSlice'
 import customerReducer from './customerSlice'
 import addressReducer from './addressSlice'
 import couponReducer from './couponSlice'
+import currencyReducer from './currencySlice'
+import { currencyListeners } from './currencyListeners'
 import { toastListeners } from './toastListeners'
 import { analyticsListeners } from './analyticsListeners'
 import { setSessionExpiredHandler } from '../utils/api'
@@ -25,6 +27,7 @@ import { setSessionExpiredHandler } from '../utils/api'
 // - customers: every account with order stats, for the admin area
 // - addresses: the signed-in customer's saved shipping addresses
 // - coupons: promo codes, for the admin area
+// - currency: the customer's display currency and cached exchange rates
 const store = configureStore({
     reducer: {
         cart: cartReducer,
@@ -38,8 +41,9 @@ const store = configureStore({
         customers: customerReducer,
         addresses: addressReducer,
         coupons: couponReducer,
+        currency: currencyReducer,
     },
-    middleware: (getDefaultMiddleware) => getDefaultMiddleware().prepend(toastListeners.middleware, analyticsListeners.middleware),
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().prepend(toastListeners.middleware, analyticsListeners.middleware, currencyListeners.middleware),
 })
 
 setSessionExpiredHandler(() => store.dispatch(sessionExpired()))
