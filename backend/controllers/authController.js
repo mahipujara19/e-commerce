@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto'
+import { waitUntil } from '@vercel/functions'
 import bcrypt from 'bcryptjs'
 import { env } from '../config/env.js'
 import { LOGIN_POLICY } from '../config/security.js'
@@ -329,8 +330,12 @@ const sendResetLink = async (user) => {
   await sendPasswordResetEmail(user, token)
 }
 
-// The response is identical, and equally fast, whether or not the email is registered:
-// the link is sent after responding, and the per-email limit applies to unknown emails too.
+// Keep the response generic; Vercel must be told to keep the email task alive after responding.
+const queueResetLink = (user) => {
+  const task = sendResetLink(user).catch((error) => console.error(`[email] Reset email failed: ${error.message}`))
+  if (process.env.VERCEL) waitUntil(task)
+}
+
 export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body
@@ -343,9 +348,8 @@ export const forgotPassword = async (req, res, next) => {
     }
 
     const user = await User.findOne({ email })
+    if (user) queueResetLink(user)
     sendSuccess(res, { message: RESET_REQUESTED_MESSAGE })
-
-    if (user) sendResetLink(user).catch((error) => console.error(`[email] Reset email failed: ${error.message}`))
   } catch (error) {
     next(error)
   }

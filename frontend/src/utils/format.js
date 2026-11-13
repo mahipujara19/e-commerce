@@ -6,7 +6,7 @@ const setting = (value, fallback) => {
 
 export const CURRENCY = (import.meta.env.VITE_CURRENCY || 'USD').toUpperCase()
 export const FREE_SHIPPING_MINIMUM = setting(import.meta.env.VITE_FREE_SHIPPING_MINIMUM, 75)
-export const FLAT_SHIPPING = setting(import.meta.env.VITE_FLAT_SHIPPING, 5.99)
+export const FLAT_SHIPPING = setting(import.meta.env.VITE_FLAT_SHIPPING, 9.99)
 export const TAX_RATE = setting(import.meta.env.VITE_TAX_RATE, 0.08)
 
 export const SIGNATURE_CATEGORIES = ['mens-watches', 'womens-jewellery', 'womens-bags', 'fragrances', 'womens-watches', 'sunglasses']
