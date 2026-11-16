@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CircularProgress } from '@mui/material'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded'
@@ -7,9 +7,12 @@ import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded'
 import RemoveShoppingCartOutlinedIcon from '@mui/icons-material/RemoveShoppingCartOutlined'
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
 import { useDispatch, useSelector } from 'react-redux'
+import useDebouncedValue from '../../hooks/useDebouncedValue'
+import { useProductList, useProductStats } from '../../hooks/useProducts'
 import useQueryParams from '../../hooks/useQueryParams'
-import { fetchproduct, updateStock } from '../../toolkit/productSlice'
-import { formatCategory, LOW_STOCK_THRESHOLD, money, stockLevel } from '../../utils/format'
+import { fetchProductStats, updateStock } from '../../toolkit/productSlice'
+import { formatCategory, LOW_STOCK_THRESHOLD, money } from '../../utils/format'
+import Pagination from '../Pagination'
 import {
   AdminEmpty,
   AdminPageHeader,
@@ -25,12 +28,15 @@ import {
 } from './AdminUI'
 import StockStatus from './StockStatus'
 
+// The id is also the API's ?stock= filter: "low" is everything at or below the threshold, sold out included.
 const STOCK_FILTERS = [
   { id: '', label: 'All' },
-  { id: 'low', label: 'Low stock', test: (product) => stockLevel(product.stock) !== 'ok' },
-  { id: 'out', label: 'Out of stock', test: (product) => stockLevel(product.stock) === 'out' },
-  { id: 'ok', label: 'Healthy', test: (product) => stockLevel(product.stock) === 'ok' },
+  { id: 'low', label: 'Low stock' },
+  { id: 'out', label: 'Out of stock' },
+  { id: 'ok', label: 'Healthy' },
 ]
+
+const INVENTORY_PAGE_SIZE = 25
 
 const COLUMNS = [
   { label: 'Product' },
@@ -145,18 +151,38 @@ function SaveBar({ count, invalid, saving, onSaveAll, onDiscardAll }) {
 
 function AdminInventory() {
   const dispatch = useDispatch()
-  const { items: products, status, error } = useSelector((state) => state.products)
   const [params, setParams] = useQueryParams()
 
   const filter = STOCK_FILTERS.find((item) => item.id === (params.get('stock') ?? '')) ?? STOCK_FILTERS[0]
   const query = params.get('q') ?? ''
-  // { [productId]: typed text }, only for rows whose value differs from the saved stock.
+  const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1)
+  const search = useDebouncedValue(query.trim(), 300)
+
+  // Most urgent first: lowest stock at the top. Saving a row updates it in place; the page only re-sorts when it
+  // is reloaded (a new filter, search or page), so rows never jump or vanish while several are being edited.
+  const { products, total, totalPages, loading: listLoading, placeholder, error, refetch } = useProductList({
+    page,
+    pageSize: INVENTORY_PAGE_SIZE,
+    sort: 'stock-asc',
+    stock: filter.id || undefined,
+    search,
+  })
+  const { data: stats, loading: statsLoading } = useProductStats()
+  const byId = useSelector((state) => state.products.byId)
+
+  // A filter change starts from page 1; a page past the end steps back.
+  const setFilter = (changes) => setParams({ ...changes, page: null })
+  useEffect(() => {
+    if (!listLoading && !error && page > totalPages) setParams({ page: totalPages > 1 ? totalPages : null })
+  }, [listLoading, error, page, totalPages, setParams])
+
+  // { [productId]: typed text }, only for rows whose value differs from the saved stock. Drafts survive paging,
+  // so changes on several pages can be saved together.
   const [drafts, setDrafts] = useState({})
   // Keys being saved: a product id for a row save, 'all' while Save all runs.
   const [saving, setSaving] = useState(() => new Set())
 
-  const productIds = useMemo(() => new Set(products.map((product) => product.id)), [products])
-  const pending = Object.entries(drafts).filter(([id]) => productIds.has(id))
+  const pending = Object.entries(drafts).filter(([id]) => byId[id])
   const invalidCount = pending.filter(([, text]) => parseDraft(text).error).length
 
   // Leaving the page with unsaved stock edits asks for confirmation.
@@ -186,6 +212,8 @@ function AdminInventory() {
     try {
       await dispatch(updateStock(updates)).unwrap()
       resetDrafts(updates.map((update) => update.id))
+      // The totals cover the whole catalogue, so they come from the server again after a save.
+      dispatch(fetchProductStats())
     } catch {
       // The toast listener reports the error; drafts stay so the save can be retried
     } finally {
@@ -199,51 +227,27 @@ function AdminInventory() {
 
   const isSaving = (id) => saving.has(id) || saving.has('all')
 
-  const summary = useMemo(() => {
-    const count = (level) => products.filter((product) => stockLevel(product.stock) === level).length
-    return {
-      units: products.reduce((total, product) => total + product.stock, 0),
-      value: products.reduce((total, product) => total + product.stock * product.price, 0),
-      low: count('low'),
-      out: count('out'),
-    }
-  }, [products])
+  const summary = stats ?? { total: 0, units: 0, value: 0, low: 0, out: 0 }
+  const visible = products
 
-  // Stock as it was when the list was loaded, filtered or searched. Ordering and filtering use it, so a row does
-  // not jump or vanish the moment its new quantity is saved. `products` is deliberately left out of the deps.
-  const listedStock = useMemo(
-    () => new Map(products.map((product) => [product.id, product.stock])),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [status, filter.id, query, products.length],
-  )
-
-  // Most urgent first: lowest stock at the top.
-  const visible = useMemo(() => {
-    const term = query.trim().toLowerCase()
-    const listed = (product) => ({ ...product, stock: listedStock.get(product.id) ?? product.stock })
-    return products
-      .filter((product) => (filter.test ? filter.test(listed(product)) : true))
-      .filter((product) => !term || [product.title, product.brand, product.sku].filter(Boolean).join(' ').toLowerCase().includes(term))
-      .sort((a, b) => listed(a).stock - listed(b).stock)
-  }, [products, filter, query, listedStock])
-
-  const loading = status === 'idle' || status === 'loading'
-  const counts = { '': products.length, low: summary.low + summary.out, out: summary.out, ok: products.length - summary.low - summary.out }
+  const loading = listLoading && products.length === 0
+  // Catalogue-wide counts from the server, so every chip is right whichever page is open.
+  const counts = stats ? { '': summary.total, low: summary.low + summary.out, out: summary.out, ok: summary.total - summary.low - summary.out } : {}
 
   return (
     <>
       <AdminPageHeader title="Inventory" description={`Stock levels across the catalogue · low stock means ${LOW_STOCK_THRESHOLD} units or fewer`} />
 
       <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={Inventory2OutlinedIcon} label="Units in stock" value={summary.units.toLocaleString()} note={`${products.length} products`} loading={loading} />
-        <StatCard icon={PaymentsOutlinedIcon} label="Stock value" value={money(summary.value)} note="At current prices" loading={loading} />
-        <StatCard icon={WarningAmberRoundedIcon} label="Low stock" value={summary.low} note="Restock soon" loading={loading} />
+        <StatCard icon={Inventory2OutlinedIcon} label="Units in stock" value={summary.units.toLocaleString()} note={`${summary.total} products`} loading={statsLoading} />
+        <StatCard icon={PaymentsOutlinedIcon} label="Stock value" value={money(summary.value)} note="At current prices" loading={statsLoading} />
+        <StatCard icon={WarningAmberRoundedIcon} label="Low stock" value={summary.low} note="Restock soon" loading={statsLoading} />
         <StatCard
           icon={RemoveShoppingCartOutlinedIcon}
           label="Out of stock"
           value={summary.out}
           note="Urgent Purchase"
-          loading={loading}
+          loading={statsLoading}
           tone={summary.out > 0 ? 'alert' : undefined}
         />
       </div>
@@ -253,12 +257,12 @@ function AdminInventory() {
           label="Filter by stock level"
           options={STOCK_FILTERS.map((item) => ({ id: item.id, label: item.label, count: counts[item.id] }))}
           value={filter.id}
-          onChange={(id) => setParams({ stock: id })}
+          onChange={(id) => setFilter({ stock: id })}
         />
-        <SearchField label="Search inventory" value={query} onChange={(value) => setParams({ q: value })} placeholder="Name, brand or SKU" />
+        <SearchField label="Search inventory" value={query} onChange={(value) => setFilter({ q: value })} placeholder="Name, brand or SKU" />
       </Toolbar>
 
-      {!loading && products.length > 0 && (
+      {(pending.length > 0 || (!loading && products.length > 0)) && (
         <SaveBar
           count={pending.length}
           invalid={invalidCount}
@@ -268,19 +272,19 @@ function AdminInventory() {
         />
       )}
 
-      {status === 'failed' && <LoadError message={`Could not load products: ${error}`} onRetry={() => dispatch(fetchproduct())} />}
+      {error && <LoadError message={`Could not load products: ${error}`} onRetry={refetch} />}
 
       {loading ? (
         <TableSkeleton />
       ) : visible.length === 0 ? (
-        status === 'succeeded' && (
+        !error && !listLoading && (
           <AdminEmpty
             icon={Inventory2OutlinedIcon}
             title={query ? 'No matching products' : filter.id ? `Nothing ${filter.label.toLowerCase()}` : 'No products yet'}
             description={query ? 'Try a different search.' : filter.id === 'low' || filter.id === 'out' ? 'Every product is comfortably stocked.' : 'Products appear here once they are added.'}
             action={
               (query || filter.id) && (
-                <button type="button" onClick={() => setParams({ stock: null, q: null })} className="btn-outline">Show all products</button>
+                <button type="button" onClick={() => setFilter({ stock: null, q: null })} className="btn-outline">Show all products</button>
               )
             }
           />
@@ -288,7 +292,7 @@ function AdminInventory() {
       ) : (
         <DataTable minWidth={880}>
           <TableHead columns={COLUMNS} />
-          <tbody className="divide-y divide-line">
+          <tbody className={`divide-y divide-line transition-opacity ${placeholder ? 'opacity-50' : ''}`} aria-busy={listLoading}>
             {visible.map((product) => {
               const draft = drafts[product.id]
               const dirty = draft !== undefined
@@ -341,6 +345,16 @@ function AdminInventory() {
             })}
           </tbody>
         </DataTable>
+      )}
+
+      {!loading && total > 0 && (
+        <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+          <p className="text-sm text-stone">
+            {(Math.min(page, totalPages) - 1) * INVENTORY_PAGE_SIZE + 1}–{Math.min(Math.min(page, totalPages) * INVENTORY_PAGE_SIZE, total)} of {total}
+            {pending.length > 0 && ' · unsaved changes are kept when you change page'}
+          </p>
+          <Pagination page={Math.min(page, totalPages)} totalPages={totalPages} onChange={(next) => setParams({ page: next > 1 ? next : null })} label="Inventory pages" />
+        </div>
       )}
     </>
   )

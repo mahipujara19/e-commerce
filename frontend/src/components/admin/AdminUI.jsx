@@ -101,7 +101,7 @@ export function Panel({ title, action, children, className = '' }) {
 
 export function PanelLink({ to, children }) {
   return (
-    <Link to={to} className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone transition-colors hover:text-ink">
+    <Link to={to} className="inline-flex min-h-[32px] items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone transition-colors hover:text-ink">
       {children} <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
     </Link>
   )

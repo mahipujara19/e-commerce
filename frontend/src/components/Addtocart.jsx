@@ -1,19 +1,23 @@
-import { IconButton } from '@mui/material'
+import { CircularProgress, IconButton } from '@mui/material'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
-import { changeQuantity, clearItem, removeItem } from '../toolkit/slice'
+import useCartStockCheck from '../hooks/useCartStockCheck'
+import { changeQuantity, clearItem, fixStockIssues, isPurchasable, removeItem } from '../toolkit/slice'
 import { cartTotals, formatCategory } from '../utils/format'
 import QuantityControl from './QuantityControl'
 import FreeShippingMeter from './FreeShippingMeter'
 import Price, { CurrencyNote } from './Price'
+import { LineStockIssue, StockCheckStatus } from './StockCheck'
 
+// The drawer is only mounted while open, so the stock check runs each time it opens.
 function Addtocart({ onClose }) {
   const dispatch = useDispatch()
   const cartItems = useSelector((state) => state.cart.items)
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
-  const { count, subtotal } = cartTotals(cartItems)
+  const { count, subtotal } = cartTotals(cartItems.filter(isPurchasable))
+  const check = useCartStockCheck(cartItems)
 
   return (
     <div className="flex h-full flex-col bg-ivory">
@@ -26,7 +30,7 @@ function Addtocart({ onClose }) {
         </IconButton>
       </div>
 
-      {count === 0 ? (
+      {cartItems.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
           <span className="grid h-20 w-20 place-items-center rounded-full bg-sand text-gold">
             <ShoppingBagOutlinedIcon sx={{ fontSize: 32 }} />
@@ -41,11 +45,13 @@ function Addtocart({ onClose }) {
         <>
           <div className="border-b border-line px-6 py-4">
             <FreeShippingMeter subtotal={subtotal} />
+            <StockCheckStatus check={check} onFixAll={() => dispatch(fixStockIssues(check.issues))} className="mt-4" />
           </div>
 
-          <ul className="flex-1 divide-y divide-line overflow-y-auto px-6">
+          <ul className="flex-1 divide-y divide-line overflow-y-auto overscroll-contain px-6">
             {cartItems.map((item) => {
               const quantity = item.quantity ?? 1
+              const issue = check.issueFor(item.id)
               return (
                 <li key={item.id} className="flex gap-4 py-5">
                   <Link to={`/productitem/${item.id}`} onClick={onClose} className="h-24 w-20 shrink-0 bg-sand p-2">
@@ -63,6 +69,15 @@ function Addtocart({ onClose }) {
                       </div>
                       <p className="shrink-0 text-sm font-semibold"><Price value={item.price * quantity} /></p>
                     </div>
+                    {issue && (
+                      <LineStockIssue
+                        className="mt-1"
+                        issue={issue}
+                        quantity={quantity}
+                        title={item.title}
+                        onFix={() => dispatch(fixStockIssues([issue]))}
+                      />
+                    )}
                     <div className="mt-auto flex items-center justify-between pt-3">
                       <QuantityControl
                         size="sm"
@@ -97,9 +112,15 @@ function Addtocart({ onClose }) {
               to={isAuthenticated ? '/checkout' : '/login'}
               state={isAuthenticated ? undefined : { from: '/checkout' }}
               onClick={onClose}
-              className="btn-primary mt-5 w-full"
+              className={`btn-primary mt-5 w-full ${check.ready ? '' : 'pointer-events-none opacity-40'}`}
+              aria-disabled={!check.ready}
+              tabIndex={check.ready ? undefined : -1}
             >
-              Checkout
+              {check.loading ? (
+                <>
+                  <CircularProgress size={14} color="inherit" /> Checking stock…
+                </>
+              ) : 'Checkout'}
             </Link>
             <Link to="/cart" onClick={onClose} className="btn-outline mt-3 w-full">
               View bag

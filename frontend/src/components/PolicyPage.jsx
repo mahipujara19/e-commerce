@@ -47,7 +47,7 @@ function PolicyPage({ page }) {
           ))}
         </article>
 
-        <nav aria-label="Help and policies" className="lg:sticky lg:top-28 lg:self-start">
+        <nav aria-label="Help and policies" className="lg:sticky lg:top-36 lg:self-start">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-stone">Help &amp; policies</p>
           <ul className="mt-4 space-y-1 border-l border-line">
             {RELATED.map((link) => (

@@ -177,7 +177,7 @@ function DetailsTab({ user }) {
         </div>
       </form>
 
-      <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start">
+      <aside className="space-y-6 lg:sticky lg:top-36 lg:self-start">
         <div className="bg-surface p-6 ring-1 ring-line sm:p-8">
           <h2 className="font-display text-2xl">Account</h2>
           <div className="mt-6">

@@ -11,9 +11,9 @@ import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../../toolkit/authSlice'
 import { fetchCustomers } from '../../toolkit/customerSlice'
 import { fetchAllOrders } from '../../toolkit/orderSlice'
-import { fetchproduct } from '../../toolkit/productSlice'
+import { fetchProductStats, invalidateProducts } from '../../toolkit/productSlice'
 import { toggleTheme } from '../../toolkit/uiSlice'
-import { LOW_STOCK_THRESHOLD } from '../../utils/format'
+import { useProductStats } from '../../hooks/useProducts'
 import PageLoader from '../PageLoader'
 import { ADMIN_SECTIONS, adminPath, canAccess } from './adminSections'
 import usePageMeta from '../../hooks/usePageMeta'
@@ -36,8 +36,9 @@ function useSectionBadges() {
   const openOrders = useSelector(
     (state) => state.orders.all.items.filter((order) => order.status === 'pending' || order.status === 'processing').length,
   )
-  const lowStock = useSelector((state) => state.products.items.filter((product) => product.stock <= LOW_STOCK_THRESHOLD).length)
-  return { orders: openOrders, inventory: lowStock }
+  // Counted by the server (stock at or below the threshold, sold out included), not from loaded pages.
+  const { data: stats } = useProductStats()
+  return { orders: openOrders, inventory: stats ? stats.low + stats.out : 0 }
 }
 
 function Sidebar({ onNavigate }) {
@@ -126,7 +127,7 @@ function AdminLayout() {
   const { pathname } = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const refreshing = useSelector(
-    (state) => state.orders.all.status === 'loading' || state.customers.status === 'loading' || state.products.status === 'loading',
+    (state) => state.orders.all.status === 'loading' || state.customers.status === 'loading' || state.products.stats.status === 'loading',
   )
 
   const current = [...ADMIN_SECTIONS].reverse().find((section) => pathname.startsWith(adminPath(section.path)))
@@ -140,14 +141,17 @@ function AdminLayout() {
   const refreshAll = () => {
     dispatch(fetchAllOrders())
     dispatch(fetchCustomers())
-    dispatch(fetchproduct({ force: true }))
+    // Open product lists reload through the version bump; the totals are fetched directly.
+    dispatch(invalidateProducts())
+    dispatch(fetchProductStats())
   }
 
   return (
     <div className="min-h-screen bg-ivory lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
-      {/* Exactly one screen tall; on short windows or when zoomed in, the menu scrolls inside the dark panel
-          instead of spilling below it and making the whole page scroll. */}
-      <aside className="sticky top-0 hidden h-screen overflow-y-auto overscroll-contain bg-night lg:block">
+      {/* Exactly one visible screen tall (dvh, so browser toolbars are not counted). The page itself is the only
+          main scroller; the sidebar scrolls on its own, inside the dark panel, only when its menu is taller than
+          the window (short laptop screens, zoom). overscroll-contain stops that scroll from moving the page. */}
+      <aside className="scrollbar-on-dark sticky top-0 hidden h-dvh overflow-y-auto overscroll-contain bg-night lg:block">
         <Sidebar />
       </aside>
 
@@ -155,7 +159,7 @@ function AdminLayout() {
         anchor="left"
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        slotProps={{ paper: { sx: { width: 'min(85vw, 300px)', bgcolor: '#171412', backgroundImage: 'none' } } }}
+        slotProps={{ paper: { className: 'scrollbar-on-dark', sx: { width: 'min(85vw, 300px)', bgcolor: '#171412', backgroundImage: 'none' } } }}
       >
         <div className="absolute right-3 top-5 z-10">
           <IconButton onClick={() => setMenuOpen(false)} aria-label="Close menu" sx={{ color: '#faf7f2' }}>
@@ -171,7 +175,7 @@ function AdminLayout() {
             <MenuRoundedIcon />
           </IconButton>
           <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-stone">
-            <Link to="/admin" className="hover:text-ink">Admin</Link>
+            <Link to="/admin" className="inline-flex min-h-[32px] items-center hover:text-ink">Admin</Link>
             {current?.path && (
               <>
                 <span aria-hidden="true">/</span>

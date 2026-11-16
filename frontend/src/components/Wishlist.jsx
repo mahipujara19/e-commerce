@@ -7,20 +7,19 @@ import { fetchWishlist } from '../toolkit/wishlistSlice'
 import EmptyState from './EmptyState'
 import ProductCard, { ProductCardSkeleton } from './ProductCard'
 import usePageMeta from '../hooks/usePageMeta'
+import { useProductsByIds } from '../hooks/useProducts'
 
 function Wishlist() {
   usePageMeta({ title: 'Wishlist', noindex: true })
   const dispatch = useDispatch()
   const { ids, status } = useSelector((state) => state.wishlist)
-  const { items: products, status: productStatus } = useSelector((state) => state.products)
+  // Only the saved products are fetched, by id; deleted ones simply drop out.
+  const { products, loading: productsLoading } = useProductsByIds(ids)
 
   // Keep the order in which pieces were saved, most recent first.
-  const saved = useMemo(() => {
-    const byId = new Map(products.map((product) => [product.id, product]))
-    return ids.map((id) => byId.get(id)).filter(Boolean).reverse()
-  }, [ids, products])
+  const saved = useMemo(() => [...products].reverse(), [products])
 
-  const loading = ((status === 'idle' || status === 'loading') && ids.length === 0) || productStatus === 'loading' || productStatus === 'idle'
+  const loading = ((status === 'idle' || status === 'loading') && ids.length === 0) || (productsLoading && saved.length === 0)
 
   return (
     <div className="container-x pb-24 pt-10 md:pt-14">

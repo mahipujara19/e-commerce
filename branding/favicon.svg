@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <title>goodthings.</title>
+  <!-- Brand mark: italic serif "g" in cream with the gold full stop, on the store's night background. -->
+  <rect width="64" height="64" rx="14" fill="#171412"/>
+  <rect x="3.5" y="3.5" width="57" height="57" rx="11" fill="none" stroke="#c9a96e" stroke-opacity="0.45" stroke-width="1.5"/>
+  <text x="28" y="44" text-anchor="middle" fill="#faf7f2" font-family="'Playfair Display', Georgia, 'Times New Roman', serif" font-size="46" font-style="italic" font-weight="600">g</text>
+  <circle cx="47" cy="42" r="4.5" fill="#c9a96e"/>
+</svg>

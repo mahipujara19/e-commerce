@@ -16,8 +16,8 @@ import useMoney from '../hooks/useMoney'
 import useOrderQuote from '../hooks/useOrderQuote'
 import usePageMeta from '../hooks/usePageMeta'
 import { fetchAddresses } from '../toolkit/addressSlice'
-import { fetchproduct } from '../toolkit/productSlice'
-import { changeQuantity, clearItem, isPurchasable, removeItem } from '../toolkit/slice'
+import { invalidateProducts } from '../toolkit/productSlice'
+import { clearItem, fixStockIssues, isPurchasable, syncWithQuote } from '../toolkit/slice'
 import { notify } from '../toolkit/toastSlice'
 import { gaItem, trackEvent } from '../utils/analytics'
 import { api } from '../utils/api'
@@ -172,7 +172,9 @@ function CheckoutForm() {
   const purchasable = cartItems.filter(isPurchasable)
   // Set below once the form exists; the quote uses it for live shipping rates and tax.
   const [quoteAddress, setQuoteAddress] = useState(null)
-  const { quote, loading: quoteLoading, error: quoteError, refresh: refreshQuote } = useOrderQuote(purchasable, couponCode, quoteAddress)
+  // Each quote also refreshes the stored bag (prices, stock), so the lines shown match what is being charged.
+  const syncBag = useCallback((freshQuote, checked) => dispatch(syncWithQuote({ quote: freshQuote, checked })), [dispatch])
+  const { quote, loading: quoteLoading, error: quoteError, refresh: refreshQuote } = useOrderQuote(purchasable, couponCode, quoteAddress, { onQuote: syncBag })
   const offers = useCouponOffers()
   // Checkout always shows and charges the store currency; a chosen display currency is only an extra estimate.
   const display = useMoney()
@@ -255,18 +257,20 @@ function CheckoutForm() {
         })
 
         // Online payments keep the bag until payment is confirmed, so a cancelled payment brings the customer back to it.
+        // Embedded: pay on the store's own page. Otherwise (no publishable key configured): Stripe's hosted page.
         if (payment?.provider === 'stripe') {
-          window.location.assign(payment.url)
+          if (payment.clientSecret) navigate(`/checkout/pay?order=${order.id}`, { state: { orderId: order.id, clientSecret: payment.clientSecret } })
+          else window.location.assign(payment.url)
           return
         }
 
         dispatch(clearItem())
-        dispatch(fetchproduct({ force: true }))
+        dispatch(invalidateProducts())
         navigate(`/checkout/complete?order=${order.id}`, { replace: true })
       } catch (error) {
         setOrderError(error.message)
         if (error.code === 'STOCK_CHANGED') {
-          dispatch(fetchproduct({ force: true }))
+          dispatch(invalidateProducts())
           refreshQuote()
         }
         setSubmitting(false)
@@ -303,13 +307,7 @@ function CheckoutForm() {
   }
 
   const fixBag = () => {
-    issues.forEach((issue) => {
-      const item = cartItems.find((cartItem) => cartItem.id === issue.product)
-      if (!item) return
-      if (issue.available === 0) dispatch(removeItem(item))
-      else dispatch(changeQuantity({ id: item.id, change: issue.available - (item.quantity ?? 1) }))
-    })
-    dispatch(fetchproduct({ force: true }))
+    dispatch(fixStockIssues(issues))
     dispatch(notify({ message: 'Your bag has been updated to what is in stock', severity: 'info' }))
   }
 
@@ -521,7 +519,7 @@ function CheckoutForm() {
           </p>
         </form>
 
-        <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start" aria-labelledby="checkout-summary-title">
+        <aside className="space-y-6 lg:sticky lg:top-36 lg:self-start" aria-labelledby="checkout-summary-title">
           <div className="bg-surface p-7 ring-1 ring-line sm:p-8">
             <div className="flex items-baseline justify-between">
               <h2 id="checkout-summary-title" className="font-display text-2xl">Order summary</h2>

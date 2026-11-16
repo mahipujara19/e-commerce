@@ -1,12 +1,11 @@
-import { useMemo } from 'react'
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined'
 import RecyclingRoundedIcon from '@mui/icons-material/RecyclingRounded'
 import WorkspacePremiumOutlinedIcon from '@mui/icons-material/WorkspacePremiumOutlined'
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined'
-import { useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import SectionHeading from './SectionHeading'
 import usePageMeta from '../hooks/usePageMeta'
+import { useProductSummary } from '../hooks/useProducts'
 import { FREE_SHIPPING_MINIMUM, moneyShort } from '../utils/format'
 
 const VALUES = [
@@ -18,18 +17,14 @@ const VALUES = [
 
 function About() {
   usePageMeta({ title: 'Our story', description: 'Why goodthings exists, and how we choose pieces made to be kept for years.' })
-  const products = useSelector((state) => state.products.items)
-
-  const stats = useMemo(() => {
-    const categories = new Set(products.map((product) => product.category)).size
-    const rating = products.length ? (products.reduce((sum, product) => sum + product.rating, 0) / products.length).toFixed(1) : '—'
-    return [
-      { value: products.length || '—', label: 'Curated pieces' },
-      { value: categories || '—', label: 'Categories' },
-      { value: rating, label: 'Average rating' },
-      { value: '30', label: 'Day returns' },
-    ]
-  }, [products])
+  // Catalogue-wide figures from the server, so this page never loads the products themselves.
+  const { data: summary } = useProductSummary()
+  const stats = [
+    { value: summary?.total || '—', label: 'Curated pieces' },
+    { value: summary?.categories.length || '—', label: 'Categories' },
+    { value: summary?.total ? summary.averageRating.toFixed(1) : '—', label: 'Average rating' },
+    { value: '30', label: 'Day returns' },
+  ]
 
   return (
     <>

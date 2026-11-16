@@ -1,17 +1,19 @@
 import { createSlice } from '@reduxjs/toolkit'
 import { login, logout, sessionExpired, signup } from './authSlice.js'
-import { fetchproduct } from './productSlice.js'
+import { fetchProduct, fetchProductList, fetchProductsByIds } from './productSlice.js'
 
 /**
  * ── cart ──
  * The bag is kept in localStorage: "cart:<email>" per account, "cart:guest" before sign-in.
  * Signing in merges the guest bag into the account's bag; signing out starts an empty guest bag.
- * Items hold a snapshot of the product, refreshed whenever the catalogue loads, so prices and stock
- * shown in the bag are current. The server re-prices and re-checks stock on every order regardless.
+ * Items hold a snapshot of the product. It is refreshed from the server's quote (useCartStockCheck, on the bag
+ * page, the bag drawer and checkout) and from any product the app happens to load, so prices and stock shown
+ * in the bag are current without loading the catalogue. Quantities are never lowered silently: the bag shows the
+ * problem and fixStockIssues applies the one-click fix. The server re-prices and re-checks stock on every order.
  *
- * Per item, set by the sync:
+ * Per item:
  * - unavailable: the product was removed from the catalogue
- * - adjusted:    the quantity was lowered because less stock is left
+ * - adjusted:    the quantity was lowered to what is in stock by fixStockIssues
  */
 
 const getCartKey = (email) => `cart:${email.trim().toLowerCase()}`
@@ -103,6 +105,41 @@ const cartSlice = createSlice({
       state.items = state.items.filter(isPurchasable)
       saveCart(state.storageKey, state.items)
     },
+    // Copies prices, names, pictures and stock from a server quote (POST /orders/quote) into the bag.
+    // payload: { quote, checked: [ids that were sent] }. Quantities are left alone; the quote's issues say what to fix.
+    syncWithQuote: (state, action) => {
+      const { quote, checked } = action.payload
+      const quoted = new Map(quote.items.map((line) => [line.product, line]))
+      const gone = new Set(quote.issues.filter((issue) => issue.type === 'unavailable').map((issue) => issue.product))
+      let changed = false
+      state.items.forEach((item) => {
+        if (!checked.includes(item.id)) return
+        const line = quoted.get(item.id)
+        if (line) {
+          Object.assign(item, { title: line.name, thumbnail: line.image, price: line.price, stock: line.stock, unavailable: false })
+          changed = true
+        } else if (gone.has(item.id)) {
+          item.unavailable = true
+          changed = true
+        }
+      })
+      if (changed) saveCart(state.storageKey, state.items)
+    },
+    // The one-click fix for quote issues: lowers each line to what is in stock, removing sold-out and deleted ones.
+    fixStockIssues: (state, action) => {
+      action.payload.forEach((issue) => {
+        const item = state.items.find((cartItem) => cartItem.id === issue.product)
+        if (!item) return
+        if (issue.type === 'unavailable' || issue.available <= 0) {
+          state.items = state.items.filter((cartItem) => cartItem.id !== issue.product)
+        } else {
+          item.quantity = issue.available
+          item.stock = issue.available
+          item.adjusted = true
+        }
+      })
+      saveCart(state.storageKey, state.items)
+    },
   },
   extraReducers: (builder) => {
     const loadUserCart = (state, email) => {
@@ -134,26 +171,27 @@ const cartSlice = createSlice({
       .addCase(signup.fulfilled, (state, action) => loadUserCart(state, action.payload.email))
       .addCase(logout.fulfilled, unloadUserCart)
       .addCase(sessionExpired, unloadUserCart)
-      // Refresh every bag item from the catalogue that just loaded.
-      .addCase(fetchproduct.fulfilled, (state, action) => {
-        if (!state.items.length) return
-        const byId = new Map(action.payload.map((product) => [product.id, product]))
-        state.items.forEach((item) => {
-          const product = byId.get(item.id)
-          if (!product) {
-            item.unavailable = true
-            return
-          }
-          Object.assign(item, snapshot(product), { unavailable: false })
-          if (product.stock > 0 && item.quantity > product.stock) {
-            item.quantity = product.stock
-            item.adjusted = true
-          }
-        })
-        saveCart(state.storageKey, state.items)
-      })
+      // Any product loaded elsewhere (shop page, product page, wishlist) refreshes its copy in the bag for free.
+      // Only fields are updated: whether the quantity still fits is decided by the stock check, not here.
+      .addMatcher(
+        (action) => [fetchProduct.fulfilled, fetchProductList.fulfilled, fetchProductsByIds.fulfilled].some((thunk) => thunk.match(action)),
+        (state, action) => {
+          if (!state.items.length) return
+          const payload = action.payload
+          const products = Array.isArray(payload) ? payload : payload.items ?? [payload]
+          const byId = new Map(products.map((product) => [product.id, product]))
+          let changed = false
+          state.items.forEach((item) => {
+            const product = byId.get(item.id)
+            if (!product) return
+            Object.assign(item, snapshot(product), { unavailable: false })
+            changed = true
+          })
+          if (changed) saveCart(state.storageKey, state.items)
+        },
+      )
   },
 })
 
-export const { addItem, changeQuantity, removeItem, clearItem, removeUnavailable } = cartSlice.actions
+export const { addItem, changeQuantity, removeItem, clearItem, removeUnavailable, syncWithQuote, fixStockIssues } = cartSlice.actions
 export default cartSlice.reducer

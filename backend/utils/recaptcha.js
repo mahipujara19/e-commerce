@@ -33,7 +33,7 @@ export const requireCaptcha = async (req, _res, next) => {
     const response = await fetch(VERIFY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ secret: env.recaptchaSecret, response: token, remoteip: clientIp(req) }),
+      body: new URLSearchParams({ secret: env.recaptchaSecret, response: token }),
       signal: AbortSignal.timeout(8000),
     })
     const result = await response.json()

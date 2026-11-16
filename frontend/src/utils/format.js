@@ -1,3 +1,5 @@
+import { LOW_STOCK_THRESHOLD } from '../../../shared/catalog.js'
+
 // Store rules from the shared .env. The API reads the same VITE_* values, so the bag and the order agree.
 const setting = (value, fallback) => {
   const number = Number(value)
@@ -9,14 +11,8 @@ export const FREE_SHIPPING_MINIMUM = setting(import.meta.env.VITE_FREE_SHIPPING_
 export const FLAT_SHIPPING = setting(import.meta.env.VITE_FLAT_SHIPPING, 9.99)
 export const TAX_RATE = setting(import.meta.env.VITE_TAX_RATE, 0.08)
 
-export const SIGNATURE_CATEGORIES = ['mens-watches', 'womens-jewellery', 'womens-bags', 'fragrances', 'womens-watches', 'sunglasses']
-
-export const LUXURY_CATEGORIES = [...SIGNATURE_CATEGORIES, 'furniture', 'home-decoration']
-
-export const featuredRank = (product) => {
-  const index = LUXURY_CATEGORIES.indexOf(product.category)
-  return index === -1 ? LUXURY_CATEGORIES.length : index
-}
+// Shared with the API so the server's "featured" sort and stock filters match what the store shows.
+export { LOW_STOCK_THRESHOLD, LUXURY_CATEGORIES, SIGNATURE_CATEGORIES } from '../../../shared/catalog.js'
 
 export const formatCategory = (value = '') =>
   value.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
@@ -45,8 +41,6 @@ export const originalPrice = (product) =>
   product.discountPercentage > 0 ? product.price / (1 - product.discountPercentage / 100) : null
 
 export const ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
-
-export const LOW_STOCK_THRESHOLD = 10
 
 export const stockLevel = (stock) => (stock === 0 ? 'out' : stock <= LOW_STOCK_THRESHOLD ? 'low' : 'ok')
 

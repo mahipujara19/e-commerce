@@ -6,7 +6,7 @@ import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded'
 import { useDispatch, useSelector } from 'react-redux'
 import useQueryParams from '../../hooks/useQueryParams'
 import { fetchAllOrders, updateOrderStatus } from '../../toolkit/orderSlice'
-import { fetchproduct } from '../../toolkit/productSlice'
+import { invalidateProducts } from '../../toolkit/productSlice'
 import { downloadCsv } from '../../utils/csv'
 import { formatDate, money, ORDER_STATUSES, orderNumber, PAYMENT_LABELS } from '../../utils/format'
 import ConfirmDialog from '../ConfirmDialog'
@@ -217,7 +217,7 @@ function AdminOrders() {
     try {
       await dispatch(updateOrderStatus({ id: order.id, status: nextStatus })).unwrap()
       // Cancelling returns the items to stock, so the catalogue needs the new numbers.
-      if (nextStatus === 'cancelled') dispatch(fetchproduct({ force: true }))
+      if (nextStatus === 'cancelled') dispatch(invalidateProducts())
     } catch {
       // Reported by the toast listener
     } finally {

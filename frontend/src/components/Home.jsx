@@ -6,8 +6,9 @@ import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined'
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
+import { useProductList, useProductSummary } from '../hooks/useProducts'
 import { setCategory } from '../toolkit/searchSlice'
 import { formatCategory, FREE_SHIPPING_MINIMUM, LUXURY_CATEGORIES, moneyShort, SIGNATURE_CATEGORIES } from '../utils/format'
 import useCouponOffers from '../hooks/useCouponOffers'
@@ -19,6 +20,9 @@ import SectionHeading from './SectionHeading'
 import usePageMeta from '../hooks/usePageMeta'
 import Price from './Price'
 
+
+// Enough of the best-rated signature pieces for the hero, bestsellers, the sale piece and the reviews.
+const HOME_PRODUCT_COUNT = 48
 
 const MARQUEE = ['Fine jewellery', 'Timepieces', 'Signature fragrance', 'Leather goods', 'Eyewear', 'Objects for the home']
 
@@ -66,21 +70,20 @@ function Home() {
   usePageMeta({})
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { items: products, status } = useSelector((state) => state.products)
   const offers = useCouponOffers()
-  const loading = status === 'idle' || status === 'loading'
+  // One page of the best-rated signature pieces is all the home page shows; the rest of the catalogue is never loaded.
+  const signature = useProductList({ categories: SIGNATURE_CATEGORIES, sort: 'rating', pageSize: HOME_PRODUCT_COUNT })
+  // A catalogue without the signature categories falls back to its best-rated pieces of any kind.
+  const fallback = useProductList({ sort: 'rating', pageSize: 12 }, { enabled: !signature.loading && !signature.products.length })
+  const { data: summary, loading: summaryLoading } = useProductSummary()
+  const products = signature.products.length ? signature.products : fallback.products
+  const loading = signature.loading || fallback.loading
 
-  const luxuryProducts = useMemo(() => {
-    const picked = products.filter((product) => SIGNATURE_CATEGORIES.includes(product.category))
-    return picked.length ? picked : products
-  }, [products])
+  // Already sorted by rating, so the first piece found in each category is its best.
+  const luxuryProducts = products
 
   const heroProducts = useMemo(() => {
-    const picks = SIGNATURE_CATEGORIES.map((category) =>
-      products
-        .filter((product) => product.category === category)
-        .sort((a, b) => b.rating - a.rating)[0],
-    ).filter(Boolean)
+    const picks = SIGNATURE_CATEGORIES.map((category) => products.find((product) => product.category === category)).filter(Boolean)
     return picks.length ? picks : products.slice(0, 1)
   }, [products])
 
@@ -95,17 +98,12 @@ function Home() {
     return () => clearInterval(timer)
   }, [heroProducts.length, slide])
 
+  // From the server's catalogue summary: every category with its count and its best-rated piece's picture.
   const categories = useMemo(() => {
-    const byCategory = new Map()
-    products.forEach((product) => {
-      if (!byCategory.has(product.category)) {
-        byCategory.set(product.category, { name: product.category, image: product.thumbnail, count: 0 })
-      }
-      byCategory.get(product.category).count += 1
-    })
+    const byCategory = new Map((summary?.categories ?? []).map((category) => [category.name, category]))
     const preferred = LUXURY_CATEGORIES.map((name) => byCategory.get(name)).filter(Boolean)
     return (preferred.length >= 4 ? preferred : [...byCategory.values()]).slice(0, 6)
-  }, [products])
+  }, [summary])
 
   const bestsellers = useMemo(
     () => [...luxuryProducts].sort((a, b) => b.rating - a.rating).slice(0, 4),
@@ -130,7 +128,7 @@ function Home() {
     return picked
   }, [luxuryProducts])
 
-  const categoryCount = useMemo(() => new Set(products.map((product) => product.category)).size, [products])
+  const categoryCount = summary?.categories.length ?? 0
 
   const handleCategory = (name) => {
     dispatch(setCategory(name))
@@ -177,7 +175,7 @@ function Home() {
             </div>
             <dl className="mt-10 grid max-w-md animate-fade-up grid-cols-3 gap-4 border-t border-ink/10 pt-7 [animation-delay:950ms] sm:mt-14 sm:gap-6 sm:pt-8">
               {[
-                { value: products.length ? `${products.length}+` : '80+', label: 'Pieces' },
+                { value: summary?.total ? `${summary.total}+` : '80+', label: 'Pieces' },
                 { value: categoryCount || '15', label: 'Categories' },
                 { value: '30', label: 'Day returns' },
               ].map((stat) => (
@@ -239,7 +237,8 @@ function Home() {
               </Link>
             )}
             {heroProducts.length > 1 && (
-              <div className="absolute -bottom-8 left-1/2 z-20 flex -translate-x-1/2 gap-2">
+              <div className="absolute -bottom-11 left-1/2 z-20 flex -translate-x-1/2">
+                {/* Each dot sits in a 24px-tall button so it is easy to tap; only the small pill inside is visible. */}
                 {heroProducts.map((product, index) => (
                   <button
                     key={product.id}
@@ -247,8 +246,13 @@ function Home() {
                     onClick={() => setSlide(index)}
                     aria-label={`Show ${product.title}`}
                     aria-current={index === activeSlide}
-                    className={`h-1.5 rounded-full transition-all duration-500 ${index === activeSlide ? 'w-8 bg-ink' : 'w-1.5 bg-ink/25 hover:bg-ink/50'}`}
-                  />
+                    className="group grid h-6 min-w-[24px] place-items-center px-1"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`block h-1.5 rounded-full transition-all duration-500 ${index === activeSlide ? 'w-8 bg-ink' : 'w-1.5 bg-ink/25 group-hover:bg-ink/50'}`}
+                    />
+                  </button>
                 ))}
               </div>
             )}
@@ -296,13 +300,13 @@ function Home() {
             id="categories-title"
             title="Shop by category"
             action={
-              <Link to="/shop" className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] hover:text-gold">
+              <Link to="/shop" className="inline-flex min-h-[44px] items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] hover:text-gold sm:min-h-[32px]">
                 View everything <ArrowForwardRoundedIcon sx={{ fontSize: 16 }} />
               </Link>
             }
           />
           <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 md:mt-12 md:grid-cols-3 lg:grid-cols-6 lg:gap-5">
-            {loading
+            {summaryLoading
               ? Array.from({ length: 6 }, (_, index) => (
                   <div key={index} className="aspect-square animate-pulse bg-sand lg:aspect-[3/4]" />
                 ))

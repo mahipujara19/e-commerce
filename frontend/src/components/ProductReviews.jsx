@@ -124,7 +124,7 @@ function ProductReviews({ product }) {
   const count = reviews.length
 
   return (
-    <section id="reviews" className="mt-16 scroll-mt-28 md:mt-24" aria-labelledby="product-reviews-title">
+    <section id="reviews" className="mt-16 scroll-mt-36 md:mt-24" aria-labelledby="product-reviews-title">
       <SectionHeading
         id="product-reviews-title"
         title={count ? `${product.rating.toFixed(1)} out of 5` : 'Reviews'}

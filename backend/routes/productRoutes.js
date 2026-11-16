@@ -6,10 +6,15 @@ import {
   deleteProduct,
   getProduct,
   getProducts,
+  getProductStats,
+  getProductSuggestions,
+  getProductSummary,
   PRODUCT_SORTS,
+  STOCK_FILTERS,
   updateProduct,
   updateStock,
 } from '../controllers/productController.js'
+import { MAX_PRODUCT_PAGE_SIZE } from '../../shared/catalog.js'
 import { adminOnly, protect, staffOnly } from '../middleware/authMiddleware.js'
 import { validate } from '../middleware/validate.js'
 
@@ -20,11 +25,35 @@ export const MAX_STOCK = 1000000
 
 const idRule = param('id').isMongoId().withMessage('Invalid product id')
 
+// "a,b,c" → ['a', 'b', 'c'], so lists fit in a plain query string.
+const commaList = (value) => String(value).split(',').map((item) => item.trim()).filter(Boolean)
+const isMongoId = (value) => /^[a-f\d]{24}$/i.test(value)
+
 const listRules = [
   query('category').optional().isString().withMessage('category must be text').trim().isLength({ max: 100 }),
+  query('categories').optional().isString().withMessage('categories must be a comma-separated list')
+    .customSanitizer(commaList)
+    .custom((list) => list.length <= 20 && list.every((item) => item.length <= 100)).withMessage('Send up to 20 categories'),
+  query('ids').optional().isString().withMessage('ids must be a comma-separated list')
+    .customSanitizer(commaList)
+    .custom((list) => list.length <= MAX_PRODUCT_PAGE_SIZE && list.every((id) => isMongoId(id)))
+    .withMessage(`ids must be up to ${MAX_PRODUCT_PAGE_SIZE} valid product ids`),
   query('search').optional().isString().withMessage('search must be text').trim().isLength({ max: 100 }),
+  query('stock').optional().isIn(STOCK_FILTERS).withMessage(`stock must be one of: ${STOCK_FILTERS.join(', ')}`),
   query('sort').optional().isIn(PRODUCT_SORTS).withMessage(`sort must be one of: ${PRODUCT_SORTS.join(', ')}`),
-  query('limit').optional().isInt({ min: 1, max: 1000 }).withMessage('limit must be between 1 and 1000').toInt(),
+  query('page').optional().isInt({ min: 1, max: 100000 }).withMessage('page must be a whole number from 1').toInt(),
+  query('pageSize').optional().isInt({ min: 1, max: MAX_PRODUCT_PAGE_SIZE })
+    .withMessage(`pageSize must be between 1 and ${MAX_PRODUCT_PAGE_SIZE}`).toInt(),
+  // Older name for pageSize.
+  query('limit').optional().isInt({ min: 1, max: MAX_PRODUCT_PAGE_SIZE })
+    .withMessage(`limit must be between 1 and ${MAX_PRODUCT_PAGE_SIZE}`).toInt(),
+]
+
+const suggestionRules = [
+  query('q').isString().withMessage('Type something to search for').trim()
+    .isLength({ min: 1, max: 100 }).withMessage('Search must be between 1 and 100 characters'),
+  // Optional: the header's "search in" category.
+  query('category').optional().isString().withMessage('category must be text').trim().toLowerCase().isLength({ max: 100 }),
 ]
 
 // On update every field is optional, but anything supplied must still be valid.
@@ -63,7 +92,10 @@ router
   .get(listRules, validate, getProducts)
   .post(protect, adminOnly, productRules({ partial: false }), validate, createProduct)
 
-// Registered before /:id so "stock" is not read as a product id.
+// Registered before /:id so these names are not read as product ids.
+router.get('/summary', getProductSummary)
+router.get('/suggestions', suggestionRules, validate, getProductSuggestions)
+router.get('/stats', protect, staffOnly, getProductStats)
 router.patch('/stock', protect, staffOnly, stockRules, validate, updateStock)
 
 router

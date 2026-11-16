@@ -11,7 +11,7 @@ import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useParams } from 'react-router-dom'
 import { addItem } from '../toolkit/slice'
-import { fetchproduct } from '../toolkit/productSlice'
+import { useProduct, useProductList } from '../hooks/useProducts'
 import { openCart } from '../toolkit/uiSlice'
 import { CURRENCY, formatCategory, FREE_SHIPPING_MINIMUM, moneyShort, originalPrice } from '../utils/format'
 import useWishlist from '../hooks/useWishlist'
@@ -58,22 +58,23 @@ function ProductItem({ id }) {
   const [quantity, setQuantity] = useState(1)
   const [imageIndex, setImageIndex] = useState(0)
   const { saved: liked, toggle: toggleLiked } = useWishlist(id)
-  const { items: products, status, error } = useSelector((state) => state.products)
+  // This product by id (shown at once if cached, refreshed for current stock), and a few more from its category.
+  const { product, loading, notFound, error, refetch } = useProduct(id)
   const cartItems = useSelector((state) => state.cart.items)
-  const product = products.find((item) => item.id === id)
   const cartItem = cartItems.find((item) => item.id === id)
+  const sameCategory = useProductList({ category: product?.category, sort: 'rating', pageSize: 5 }, { enabled: Boolean(product?.category) })
 
   const related = useMemo(
-    () => (product ? products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 4) : []),
-    [products, product],
+    () => sameCategory.products.filter((item) => item.id !== id).slice(0, 4),
+    [sameCategory.products, id],
   )
 
   usePageMeta({
-    title: product?.title ?? (status === 'succeeded' ? 'Piece not found' : undefined),
+    title: product?.title ?? (notFound ? 'Piece not found' : undefined),
     description: product ? `${product.description.slice(0, 150)}${product.description.length > 150 ? '…' : ''}` : undefined,
     image: product?.thumbnail,
     type: product ? 'product' : 'website',
-    noindex: status === 'succeeded' && !product,
+    noindex: notFound,
     jsonLd: product && productJsonLd(product),
   })
 
@@ -83,7 +84,7 @@ function ProductItem({ id }) {
     // Once per product page, not on every stock refresh.
   }, [productId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!product && (status === 'idle' || status === 'loading')) {
+  if (!product && loading) {
     return (
       <div className="container-x grid animate-pulse gap-12 py-12 lg:grid-cols-2" role="status" aria-label="Loading product">
         <div className="aspect-square bg-sand" />
@@ -97,13 +98,13 @@ function ProductItem({ id }) {
     )
   }
 
-  if (!product && status === 'failed') {
+  if (!product && error) {
     return (
       <div className="container-x py-20">
         <Alert
           severity="error"
           action={
-            <button type="button" onClick={() => dispatch(fetchproduct())} className="px-3 text-sm font-semibold underline">
+            <button type="button" onClick={refetch} className="px-3 text-sm font-semibold underline">
               Retry
             </button>
           }
@@ -168,7 +169,7 @@ function ProductItem({ id }) {
       </nav>
 
       <section className="mt-6 grid gap-8 md:mt-8 md:grid-cols-2 md:gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16" aria-labelledby="product-title">
-        <div className="md:sticky md:top-28 md:self-start">
+        <div className="md:sticky md:top-36 md:self-start">
           <div className="relative aspect-square overflow-hidden bg-sand">
             <img
               key={images[activeIndex]}
@@ -204,7 +205,7 @@ function ProductItem({ id }) {
           <h1 id="product-title" className="font-display text-[32px] leading-tight tracking-tight sm:text-4xl lg:text-5xl">
             {product.title}
           </h1>
-          <a href="#reviews" className="mt-5 inline-flex items-center gap-2 text-sm text-stone hover:text-ink">
+          <a href="#reviews" className="mt-4 inline-flex min-h-[28px] items-center gap-2 py-1 text-sm text-stone hover:text-ink">
             <Rating value={product.rating} precision={0.1} readOnly size="small" />
             {product.rating.toFixed(1)} · {product.reviews?.length ?? 0} reviews
           </a>

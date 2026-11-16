@@ -3,24 +3,32 @@ import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded'
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined'
-import { Alert } from '@mui/material'
+import { CircularProgress } from '@mui/material'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
+import useCartStockCheck from '../hooks/useCartStockCheck'
 import usePageMeta from '../hooks/usePageMeta'
-import { changeQuantity, isPurchasable, removeItem, removeUnavailable } from '../toolkit/slice'
+import { changeQuantity, fixStockIssues, isPurchasable, removeItem } from '../toolkit/slice'
+import { notify } from '../toolkit/toastSlice'
 import { cartTotals, formatCategory } from '../utils/format'
 import EmptyState from './EmptyState'
 import FreeShippingMeter from './FreeShippingMeter'
 import QuantityControl from './QuantityControl'
 import Price, { CurrencyNote } from './Price'
+import { LineStockIssue, StockCheckStatus } from './StockCheck'
 
 function Cartlist() {
   const dispatch = useDispatch()
   const cartItems = useSelector((state) => state.cart.items)
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
   const purchasable = cartItems.filter(isPurchasable)
-  const unavailableCount = cartItems.length - purchasable.length
   const { count, subtotal, shipping, tax, total } = cartTotals(purchasable)
+  const check = useCartStockCheck(cartItems)
+
+  const fixAll = () => {
+    dispatch(fixStockIssues(check.issues))
+    dispatch(notify({ message: 'Your bag has been updated to what is in stock', severity: 'info' }))
+  }
 
   usePageMeta({ title: 'Your bag', noindex: true })
 
@@ -47,26 +55,15 @@ function Cartlist() {
         <p className="text-sm text-stone">{count} {count === 1 ? 'item' : 'items'}</p>
       </header>
 
-      {unavailableCount > 0 && (
-        <Alert
-          severity="warning"
-          className="mt-8"
-          action={
-            <button type="button" onClick={() => dispatch(removeUnavailable())} className="whitespace-nowrap px-2 text-sm font-semibold underline">
-              Remove {unavailableCount === 1 ? 'it' : 'them'}
-            </button>
-          }
-        >
-          {unavailableCount === 1 ? 'One item in your bag is' : `${unavailableCount} items in your bag are`} no longer available and will not be ordered.
-        </Alert>
-      )}
+      <StockCheckStatus check={check} onFixAll={fixAll} className="mt-8" />
 
-      <div className="mt-10 grid gap-12 lg:grid-cols-[1fr_400px] lg:gap-16">
-        <ul className="divide-y divide-line">
+      <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-16">
+        <ul className="min-w-0 divide-y divide-line">
           {cartItems.map((item) => {
             const quantity = item.quantity ?? 1
-            const available = isPurchasable(item)
-            const lowStock = available && item.stock != null && item.stock <= 5
+            const issue = check.issueFor(item.id)
+            const available = isPurchasable(item) && issue?.type !== 'unavailable' && issue?.available !== 0
+            const lowStock = available && !issue && item.stock != null && item.stock <= 5
             return (
               <li key={item.id} className={`flex gap-5 py-8 first:pt-0 sm:gap-8 ${available ? '' : 'opacity-60'}`}>
                 <Link to={`/productitem/${item.id}`} className="h-36 w-28 shrink-0 bg-sand p-3 sm:h-44 sm:w-36">
@@ -80,13 +77,21 @@ function Cartlist() {
                         {item.title}
                       </Link>
                       <p className="mt-1 text-sm text-stone"><Price value={item.price} /> each</p>
-                      {!available && (
+                      {issue ? (
+                        <LineStockIssue
+                          className="mt-2"
+                          issue={issue}
+                          quantity={quantity}
+                          title={item.title}
+                          onFix={() => dispatch(fixStockIssues([issue]))}
+                        />
+                      ) : !isPurchasable(item) ? (
                         <p className="mt-2 text-sm font-semibold text-red-700 dark:text-red-400">
                           {item.unavailable ? 'No longer available' : 'Sold out'}
                         </p>
-                      )}
-                      {available && item.adjusted && (
-                        <p className="mt-2 text-sm text-gold" role="status">Quantity reduced to the {item.stock} we have left</p>
+                      ) : null}
+                      {!issue && available && item.adjusted && (
+                        <p className="mt-2 text-sm text-gold" role="status">Quantity changed to the {item.stock} we have left</p>
                       )}
                       {lowStock && !item.adjusted && <p className="mt-2 text-sm text-gold">Only {item.stock} left</p>}
                     </div>
@@ -105,7 +110,7 @@ function Cartlist() {
                       type="button"
                       onClick={() => dispatch(removeItem(item))}
                       aria-label={`Remove ${item.title} from bag`}
-                      className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] text-stone underline-offset-4 hover:text-red-700 hover:underline"
+                      className="inline-flex min-h-[44px] items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] text-stone underline-offset-4 hover:text-red-700 hover:underline sm:min-h-[32px]"
                     >
                       <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} /> Remove
                     </button>
@@ -116,7 +121,7 @@ function Cartlist() {
           })}
         </ul>
 
-        <aside className="lg:sticky lg:top-28 lg:self-start" aria-labelledby="summary-title">
+        <aside className="lg:sticky lg:top-36 lg:self-start" aria-labelledby="summary-title">
           <div className="bg-surface p-7 ring-1 ring-line sm:p-8">
             <h2 id="summary-title" className="font-display text-2xl">Order summary</h2>
             <div className="mt-6">
@@ -149,19 +154,29 @@ function Cartlist() {
                 </span>
               </p>
             )}
+            {/* Waits for a stock check that matches this bag and found nothing to fix. Checkout checks again, and the
+                order reserves stock atomically, so this only stops a shopper heading into a checkout that would fail. */}
             <Link
               to={isAuthenticated ? '/checkout' : '/login'}
               state={isAuthenticated ? undefined : { from: '/checkout' }}
-              className={`btn-primary mt-6 w-full ${purchasable.length ? '' : 'pointer-events-none opacity-40'}`}
-              aria-disabled={!purchasable.length}
+              className={`btn-primary mt-6 w-full ${purchasable.length && check.ready ? '' : 'pointer-events-none opacity-40'}`}
+              aria-disabled={!purchasable.length || !check.ready}
+              tabIndex={purchasable.length && check.ready ? undefined : -1}
             >
-              {isAuthenticated ? 'Proceed to checkout' : 'Sign in to checkout'}
+              {check.loading ? (
+                <>
+                  <CircularProgress size={14} color="inherit" /> Checking stock…
+                </>
+              ) : isAuthenticated ? 'Proceed to checkout' : 'Sign in to checkout'}
             </Link>
+            <p className="sr-only" aria-live="polite">
+              {check.loading ? 'Checking stock' : check.issues.length ? 'Some items need updating before checkout' : ''}
+            </p>
             <Link to="/" className="btn-outline mt-3 w-full">Continue shopping</Link>
 
             <ul className="mt-8 space-y-3 border-t border-line pt-6 text-xs text-stone">
               <li className="flex items-center gap-2"><LockOutlinedIcon sx={{ fontSize: 16 }} className="text-gold" /> Secure, encrypted checkout</li>
-              <li className="flex items-center gap-2"><AutorenewRoundedIcon sx={{ fontSize: 16 }} className="text-gold" /> <Link to="/returns" className="hover:text-ink hover:underline">30-day returns</Link></li>
+              <li className="flex items-center gap-2"><AutorenewRoundedIcon sx={{ fontSize: 16 }} className="text-gold" /> <Link to="/returns" className="inline-flex min-h-[24px] items-center hover:text-ink hover:underline">30-day returns</Link></li>
               <li className="flex items-center gap-2"><VerifiedOutlinedIcon sx={{ fontSize: 16 }} className="text-gold" /> Authenticity guaranteed</li>
             </ul>
           </div>

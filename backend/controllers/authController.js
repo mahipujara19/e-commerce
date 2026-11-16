@@ -328,12 +328,17 @@ const sendResetLink = async (user) => {
     { passwordResetToken: hash, passwordResetExpires: new Date(Date.now() + RESET_TTL_MS) },
   )
   await sendPasswordResetEmail(user, token)
+  console.info(env.smtp.host ? '[email] Password reset email accepted by SMTP' : '[email] Password reset email printed to the backend console')
 }
 
 // Keep the response generic; Vercel must be told to keep the email task alive after responding.
 const queueResetLink = (user) => {
   const task = sendResetLink(user).catch((error) => console.error(`[email] Reset email failed: ${error.message}`))
-  if (process.env.VERCEL) waitUntil(task)
+  if (process.env.VERCEL) {
+    waitUntil(task)
+    return
+  }
+  if (!env.isProduction) return task
 }
 
 export const forgotPassword = async (req, res, next) => {
@@ -348,7 +353,8 @@ export const forgotPassword = async (req, res, next) => {
     }
 
     const user = await User.findOne({ email })
-    if (user) queueResetLink(user)
+    if (user) await queueResetLink(user)
+    else if (!env.isProduction) console.info('[email] Password reset skipped: no matching account')
     sendSuccess(res, { message: RESET_REQUESTED_MESSAGE })
   } catch (error) {
     next(error)

@@ -41,6 +41,43 @@
     color: rgb(var(--ivory));
   }
 
+  /* Scrollbars: thin, rounded and quiet, in the theme's own colours (light and dark follow --stone).
+     Never hidden, and purely visual: wheel, touch, keyboard and screen-reader scrolling are untouched.
+     Chromium and Safari use the ::-webkit-scrollbar rules below, which allow a rounded thumb. The standard
+     scrollbar-color/width are given to Firefox only, because once they are set Chromium ignores the webkit rules. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* The transparent border insets the thumb, so it reads as a slim pill with breathing room either side. */
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+    background-color: rgb(var(--stone) / 0.35);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--stone) / 0.6);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background-color: rgb(var(--stone) / 0.75);
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgb(var(--stone) / 0.45) transparent;
+    }
+  }
+
   /* Keyboard users always see where they are; mouse clicks do not leave a ring behind. */
   :focus-visible {
     outline: 2px solid rgb(var(--gold));
@@ -232,5 +269,20 @@
 
   .btn-outline {
     @apply btn border border-ink text-ink hover:bg-ink hover:text-ivory;
+  }
+
+  /* Scroll areas that are always dark whatever the theme (the admin sidebar): a pale thumb on the dark panel. */
+  .scrollbar-on-dark::-webkit-scrollbar-thumb {
+    background-color: rgb(250 247 242 / 0.18);
+  }
+
+  .scrollbar-on-dark::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(250 247 242 / 0.35);
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    .scrollbar-on-dark {
+      scrollbar-color: rgb(250 247 242 / 0.25) transparent;
+    }
   }
 }

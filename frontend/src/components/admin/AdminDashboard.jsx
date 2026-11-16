@@ -15,6 +15,7 @@ import { formatDate, LOW_STOCK_THRESHOLD, money, ORDER_STATUSES, orderNumber } f
 import { OrderStatusBadge } from '../OrderDetails'
 import { AdminPageHeader, LoadError, Panel, PanelLink, StatCard, Thumb } from './AdminUI'
 import { orderLink } from './adminSections'
+import { useProductList, useProductStats } from '../../hooks/useProducts'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -35,12 +36,14 @@ function Quiet({ children }) {
 function AdminDashboard() {
   const dispatch = useDispatch()
   const user = useSelector((state) => state.auth.user)
-  const { items: products, status: productStatus } = useSelector((state) => state.products)
   const { items: orders, status: orderStatus, error: orderError } = useSelector((state) => state.orders.all)
   const { items: customers, status: customerStatus } = useSelector((state) => state.customers)
+  // Stock figures come from the server; only the six most urgent products are loaded for the alerts panel.
+  const { data: productStats, loading: productStatsLoading } = useProductStats()
+  const urgent = useProductList({ stock: 'low', sort: 'stock-asc', pageSize: 6 })
 
   const ordersLoading = isLoading(orderStatus, orders)
-  const productsLoading = isLoading(productStatus, products)
+  const productsLoading = productStatsLoading || (urgent.loading && urgent.products.length === 0)
   const customersLoading = isLoading(customerStatus, customers)
   // Read once on mount so "last 30 days" figures stay stable across re-renders.
   const [now] = useState(() => Date.now())
@@ -62,16 +65,18 @@ function AdminDashboard() {
       byStatus,
       shoppers,
       newShoppers: shoppers.filter((customer) => now - new Date(customer.createdAt).getTime() <= 30 * DAY_MS).length,
-      outOfStock: products.filter((product) => product.stock === 0).length,
-      lowStock: products.filter((product) => product.stock <= LOW_STOCK_THRESHOLD).sort((a, b) => a.stock - b.stock),
+      outOfStock: productStats?.out ?? 0,
+      // Everything at or below the threshold, sold out included; `urgent` holds the first few of them.
+      lowStockCount: productStats ? productStats.low + productStats.out : 0,
+      lowStock: urgent.products,
     }
-  }, [orders, products, customers, now])
+  }, [orders, customers, now, productStats, urgent.products])
 
   // Staff cannot create products, so that shortcut is only offered to admins.
   const quickActions = [
     user?.role === 'admin' && { to: '/admin/products?new=1', icon: AddRoundedIcon, label: 'Add a product', note: 'Create a new catalogue entry' },
     { to: '/admin/orders?status=pending', icon: PendingActionsOutlinedIcon, label: 'Process pending orders', note: `${stats.byStatus.pending} waiting` },
-    { to: '/admin/inventory?stock=low', icon: Inventory2OutlinedIcon, label: 'Restock low items', note: `${stats.lowStock.length} at or below ${LOW_STOCK_THRESHOLD}` },
+    { to: '/admin/inventory?stock=low', icon: Inventory2OutlinedIcon, label: 'Restock low items', note: `${stats.lowStockCount} at or below ${LOW_STOCK_THRESHOLD}` },
     { to: '/admin/customers', icon: ManageAccountsOutlinedIcon, label: 'Review customers', note: `${stats.newShoppers} joined this month` },
   ].filter(Boolean)
 
@@ -109,7 +114,7 @@ function AdminDashboard() {
         <StatCard
           icon={WarningAmberRoundedIcon}
           label="Inventory alerts"
-          value={stats.lowStock.length}
+          value={stats.lowStockCount}
           note={`${stats.outOfStock} out of stock`}
           loading={productsLoading}
           tone={stats.outOfStock > 0 ? 'alert' : undefined}

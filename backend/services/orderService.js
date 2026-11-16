@@ -109,7 +109,7 @@ export const buildQuote = async ({ items: requested, couponCode, address }) => {
         message: product.stock === 0 ? `${product.name} is sold out` : `Only ${product.stock} of ${product.name} left`,
       })
     }
-    lines.push({ product: product._id, name: product.name, image: product.image, price: product.price, quantity })
+    lines.push({ product: product._id, name: product.name, image: product.image, price: product.price, quantity, stock: product.stock })
   }
 
   const subtotal = lines.reduce((sum, line) => sum + Math.round(line.price * 100) * line.quantity, 0) / 100
@@ -127,7 +127,8 @@ export const buildQuote = async ({ items: requested, couponCode, address }) => {
 }
 
 export const quoteResponse = ({ lines, issues, coupon, couponError, totals, pricing }) => ({
-  items: lines.map(({ product, name, image, price, quantity }) => ({ product: String(product), name, image, price, quantity })),
+  // stock lets the bag refresh its copy of each product from this one call; it is a snapshot, not a reservation.
+  items: lines.map(({ product, name, image, price, quantity, stock }) => ({ product: String(product), name, image, price, quantity, stock })),
   issues,
   coupon: coupon ? { code: coupon.code, type: coupon.type, value: coupon.value, description: coupon.description } : null,
   couponError,
@@ -215,6 +216,9 @@ const createCheckoutSession = async (order) => {
       }]
     : undefined
 
+  const returnUrl = `${env.clientUrl}/checkout/complete?order=${order.id}`
+  const embedded = env.payments.stripeEmbedded
+
   return stripe.checkout.sessions.create(
     {
       mode: 'payment',
@@ -225,13 +229,23 @@ const createCheckoutSession = async (order) => {
       metadata: { orderId: order.id },
       payment_intent_data: { metadata: { orderId: order.id }, description: `Order ${orderNumber(order.id)}` },
       expires_at: Math.floor((Date.now() + PAYMENT_WINDOW_MS) / 1000),
-      success_url: `${env.clientUrl}/checkout/complete?order=${order.id}`,
-      cancel_url: `${env.clientUrl}/checkout/complete?order=${order.id}&cancelled=1`,
+      // Embedded: the form sits on the store's /checkout/pay page and returns to the same completion page when paid
+      // (cancelling is a button on that page). Hosted: Stripe's own page, with its back link as the cancel URL.
+      ...(embedded
+        ? { ui_mode: 'embedded', return_url: returnUrl }
+        : { success_url: returnUrl, cancel_url: `${returnUrl}&cancelled=1` }),
     },
-    // A retried request can never create a second session for the same order.
-    { idempotencyKey: `checkout-${order.id}` },
+    // A retried request can never create a second session for the same order. The key differs per mode, because
+    // Stripe refuses a key reused with different parameters.
+    { idempotencyKey: `checkout-${embedded ? 'embedded-' : ''}${order.id}` },
   )
 }
+
+// What the browser needs to take the payment: the client secret for Embedded Checkout, or the hosted page URL.
+const stripePayment = (session) =>
+  session.ui_mode === 'embedded'
+    ? { provider: 'stripe', clientSecret: session.client_secret }
+    : { provider: 'stripe', url: session.url }
 
 // ── Order lifecycle ──
 
@@ -326,7 +340,8 @@ export const confirmRazorpayPayment = async (order, { razorpayOrderId, razorpayP
 /**
  * Places an order: prices it from the database, reserves stock, claims the coupon and, for online payments,
  * starts the payment. Resolves with { order, payment }: payment is null for pay on delivery,
- * { provider: 'stripe', url } for Stripe Checkout, or the Razorpay Checkout options for Razorpay.
+ * { provider: 'stripe', clientSecret } for Embedded Checkout, { provider: 'stripe', url } for Stripe's hosted page,
+ * or the Razorpay Checkout options for Razorpay.
  */
 export const placeOrder = async ({ user, items: requested, shippingAddress, couponCode, paymentMethod }) => {
   // The customer's choice, or the store's first method. The route already rejects methods that are not enabled.
@@ -391,7 +406,7 @@ export const placeOrder = async ({ user, items: requested, shippingAddress, coup
     const session = await createCheckoutSession(order)
     order.payment.stripeSessionId = session.id
     await order.save()
-    return { order, payment: { provider: 'stripe', url: session.url } }
+    return { order, payment: stripePayment(session) }
   } catch (error) {
     // Payment could not even start: undo everything so the customer can simply try again.
     console.error(`[payments] Could not start a ${provider} payment for ${order.id}: ${error.message}`)
@@ -557,10 +572,10 @@ export const resumePayment = async (order) => {
   }
   if (!order.payment.stripeSessionId) throw new ApiError(400, 'This order does not need payment')
   const session = await getStripe().checkout.sessions.retrieve(order.payment.stripeSessionId)
-  if (session.status !== 'open' || !session.url) {
+  if (session.status !== 'open' || !(session.url || session.client_secret)) {
     throw new ApiError(410, 'This payment link has expired. Please place the order again.')
   }
-  return { provider: 'stripe', url: session.url }
+  return stripePayment(session)
 }
 
 // Status changes by staff. Returns the saved order; sends the matching customer email.

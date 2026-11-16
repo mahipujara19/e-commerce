@@ -95,7 +95,7 @@ export const createOrder = async (req, res, next) => {
       status: 201,
       message: payment ? 'Continue to payment' : 'Order placed',
       // paymentUrl is kept for Stripe so older clients keep working.
-      data: { order: withPayment(order), payment, paymentUrl: payment?.provider === 'stripe' ? payment.url : null },
+      data: { order: withPayment(order), payment, paymentUrl: payment?.provider === 'stripe' ? payment.url ?? null : null },
     })
   } catch (error) {
     next(error)
@@ -140,7 +140,7 @@ export const payOrder = async (req, res, next) => {
   try {
     const order = await loadOwnOrder(req)
     const payment = await resumePayment(order)
-    sendSuccess(res, { message: 'Payment ready', data: { payment, paymentUrl: payment.provider === 'stripe' ? payment.url : null } })
+    sendSuccess(res, { message: 'Payment ready', data: { payment, paymentUrl: payment.provider === 'stripe' ? payment.url ?? null : null } })
   } catch (error) {
     next(error)
   }

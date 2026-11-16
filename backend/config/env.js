@@ -67,6 +67,19 @@ if (paymentMethods.includes('razorpay') && !razorpayConfigured) {
   throw new Error('The razorpay payment method needs RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET (Razorpay Dashboard → Account & Settings → API Keys).')
 }
 if (paymentMethods.includes('stripe') && !stripeSecretKey) throw new Error('The stripe payment method needs STRIPE_SECRET_KEY.')
+
+// Embedded Checkout (card payment on the store's own /checkout/pay page) needs the publishable key in the browser.
+// Without it, customers are sent to Stripe's hosted page as before. The key is public by design (pk_…), and
+// must come from the same Stripe account and mode as STRIPE_SECRET_KEY.
+const stripePublishableKey = process.env.VITE_STRIPE_PUBLISHABLE_KEY || ''
+const keyMode = (key) => (key.includes('_live_') ? 'live' : key.includes('_test_') ? 'test' : null)
+if (stripePublishableKey && !stripePublishableKey.startsWith('pk_')) {
+  throw new Error('VITE_STRIPE_PUBLISHABLE_KEY must be the publishable key (pk_test_… or pk_live_…), never the secret key.')
+}
+const stripeEmbedded = Boolean(stripePublishableKey && stripeSecretKey)
+if (stripeEmbedded && keyMode(stripePublishableKey) !== keyMode(stripeSecretKey)) {
+  throw new Error('VITE_STRIPE_PUBLISHABLE_KEY and STRIPE_SECRET_KEY must both be test keys or both be live keys.')
+}
 if (isProduction && paymentMethods.includes('razorpay') && !process.env.RAZORPAY_WEBHOOK_SECRET) {
   console.warn('[payments] RAZORPAY_WEBHOOK_SECRET is not set: payments are confirmed by the browser and by re-checking with Razorpay only.')
 }
@@ -141,6 +154,8 @@ export const env = {
     unavailable: KNOWN_METHODS.filter((method) => !paymentMethods.includes(method)),
     stripeSecretKey,
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+    // true: card payment happens on the store's /checkout/pay page (Stripe Embedded Checkout); false: Stripe's hosted page.
+    stripeEmbedded,
     // ISO 4217, lowercase. Prices in the catalogue are in this currency.
     currency,
     razorpayKeyId: process.env.RAZORPAY_KEY_ID || '',

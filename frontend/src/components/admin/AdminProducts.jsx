@@ -1,17 +1,22 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { IconButton, Tooltip } from '@mui/material'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import SellOutlinedIcon from '@mui/icons-material/SellOutlined'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
+import useDebouncedValue from '../../hooks/useDebouncedValue'
+import { useProductList, useProductSummary } from '../../hooks/useProducts'
 import useQueryParams from '../../hooks/useQueryParams'
-import { deleteProduct, fetchproduct } from '../../toolkit/productSlice'
+import { deleteProduct } from '../../toolkit/productSlice'
 import { formatCategory, formatDate, money } from '../../utils/format'
 import ConfirmDialog from '../ConfirmDialog'
+import Pagination from '../Pagination'
 import { AdminEmpty, AdminPageHeader, DataTable, LoadError, SearchField, TableHead, TableSkeleton, Thumb, Toolbar } from './AdminUI'
 import ProductFormDialog from './ProductFormDialog'
 import StockStatus from './StockStatus'
+
+const ADMIN_PAGE_SIZE = 25
 
 const COLUMNS = [
   { label: 'Product' },
@@ -26,7 +31,6 @@ const COLUMNS = [
 // Catalogue management: create, edit and delete. Stock levels are adjusted on the Inventory screen.
 function AdminProducts() {
   const dispatch = useDispatch()
-  const { items: products, status, error } = useSelector((state) => state.products)
   const [params, setParams] = useQueryParams()
   const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)
@@ -34,21 +38,26 @@ function AdminProducts() {
 
   const query = params.get('q') ?? ''
   const category = params.get('category') ?? ''
+  const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1)
   const formOpen = params.has('new') || Boolean(editing)
+  const search = useDebouncedValue(query.trim(), 300)
 
-  const categories = useMemo(() => [...new Set(products.map((product) => product.category))].sort(), [products])
+  // Newest first, so a product that was just added is at the top. Search covers name, brand, SKU and category.
+  const { products: visible, total, totalPages, loading: listLoading, placeholder, error, refetch } = useProductList({
+    page,
+    pageSize: ADMIN_PAGE_SIZE,
+    sort: 'newest',
+    category,
+    search,
+  })
+  const { data: summary } = useProductSummary()
+  const categories = useMemo(() => (summary?.categories ?? []).map((item) => item.name), [summary])
 
-  // Newest first, so a product that was just added is at the top.
-  const visible = useMemo(() => {
-    const term = query.trim().toLowerCase()
-    return products
-      .filter((product) => {
-        if (category && product.category !== category) return false
-        if (!term) return true
-        return [product.title, product.brand, product.sku].filter(Boolean).join(' ').toLowerCase().includes(term)
-      })
-      .reverse()
-  }, [products, query, category])
+  // A filter change starts from page 1; deleting the last product on a page steps back a page.
+  const setFilter = (changes) => setParams({ ...changes, page: null })
+  useEffect(() => {
+    if (!listLoading && !error && page > totalPages) setParams({ page: totalPages > 1 ? totalPages : null })
+  }, [listLoading, error, page, totalPages, setParams])
 
   const closeForm = () => {
     setEditing(null)
@@ -67,14 +76,14 @@ function AdminProducts() {
     }
   }
 
-  const loading = status === 'idle' || status === 'loading'
+  const loading = listLoading && visible.length === 0
   const filtered = query || category
 
   return (
     <>
       <AdminPageHeader
         title="Products"
-        description={loading ? 'Loading…' : `${products.length} products across ${categories.length} categories`}
+        description={summary ? `${summary.total} products across ${categories.length} categories` : 'Loading…'}
         actions={
           <button type="button" onClick={() => setParams({ new: '1' })} className="btn-primary">
             <AddRoundedIcon sx={{ fontSize: 18 }} /> Add product
@@ -87,7 +96,7 @@ function AdminProducts() {
           <span className="sr-only">Filter by category</span>
           <select
             value={category}
-            onChange={(event) => setParams({ category: event.target.value })}
+            onChange={(event) => setFilter({ category: event.target.value })}
             className="h-11 w-full cursor-pointer border border-line bg-surface px-4 pr-8 text-sm outline-none focus:border-ink md:w-60"
           >
             <option value="">All categories</option>
@@ -96,22 +105,22 @@ function AdminProducts() {
             ))}
           </select>
         </label>
-        <SearchField label="Search products" value={query} onChange={(value) => setParams({ q: value })} placeholder="Name, brand or SKU" />
+        <SearchField label="Search products" value={query} onChange={(value) => setFilter({ q: value })} placeholder="Name, brand or SKU" />
       </Toolbar>
 
-      {status === 'failed' && <LoadError message={`Could not load products: ${error}`} onRetry={() => dispatch(fetchproduct())} />}
+      {error && <LoadError message={`Could not load products: ${error}`} onRetry={refetch} />}
 
       {loading ? (
         <TableSkeleton />
       ) : visible.length === 0 ? (
-        status === 'succeeded' && (
+        !error && !listLoading && (
           <AdminEmpty
             icon={SellOutlinedIcon}
             title={filtered ? 'No matching products' : 'No products yet'}
             description={filtered ? 'Try a different category or search.' : 'Add your first product to open the boutique.'}
             action={
               filtered ? (
-                <button type="button" onClick={() => setParams({ q: null, category: null })} className="btn-outline">Clear filters</button>
+                <button type="button" onClick={() => setFilter({ q: null, category: null })} className="btn-outline">Clear filters</button>
               ) : (
                 <button type="button" onClick={() => setParams({ new: '1' })} className="btn-primary">Add product</button>
               )
@@ -121,7 +130,7 @@ function AdminProducts() {
       ) : (
         <DataTable minWidth={900}>
           <TableHead columns={COLUMNS} />
-          <tbody className="divide-y divide-line">
+          <tbody className={`divide-y divide-line transition-opacity ${placeholder ? 'opacity-50' : ''}`} aria-busy={listLoading}>
             {visible.map((product) => (
               <tr key={product.id} className="align-middle transition-colors hover:bg-ivory/60">
                 <td className="px-5 py-3">
@@ -165,6 +174,15 @@ function AdminProducts() {
             ))}
           </tbody>
         </DataTable>
+      )}
+
+      {!loading && total > 0 && (
+        <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+          <p className="text-sm text-stone">
+            {(Math.min(page, totalPages) - 1) * ADMIN_PAGE_SIZE + 1}–{Math.min(Math.min(page, totalPages) * ADMIN_PAGE_SIZE, total)} of {total}
+          </p>
+          <Pagination page={Math.min(page, totalPages)} totalPages={totalPages} onChange={(next) => setParams({ page: next > 1 ? next : null })} label="Product pages" />
+        </div>
       )}
 
       <ProductFormDialog open={formOpen} product={editing} categories={categories} onClose={closeForm} />

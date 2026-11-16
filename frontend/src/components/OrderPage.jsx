@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { Alert, CircularProgress } from '@mui/material'
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded'
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import usePageMeta from '../hooks/usePageMeta'
 import { cancelMyOrder, fetchOrder } from '../toolkit/orderSlice'
-import { fetchproduct } from '../toolkit/productSlice'
+import { invalidateProducts } from '../toolkit/productSlice'
 import { api } from '../utils/api'
 import { formatDate, money, orderNumber } from '../utils/format'
 import ConfirmDialog from './ConfirmDialog'
@@ -17,6 +17,7 @@ const label = 'text-[11px] font-semibold uppercase tracking-[0.18em] text-stone'
 
 function OrderPage({ id }) {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const order = useSelector((state) => state.orders.byId[id])
   const [error, setError] = useState('')
   const [confirming, setConfirming] = useState(false)
@@ -37,7 +38,7 @@ function OrderPage({ id }) {
     setCancelling(true)
     try {
       await dispatch(cancelMyOrder(id)).unwrap()
-      dispatch(fetchproduct({ force: true }))
+      dispatch(invalidateProducts())
     } catch {
       // Reported by the toast listener
     } finally {
@@ -50,6 +51,10 @@ function OrderPage({ id }) {
     setPayError('')
     try {
       const { payment } = await api(`/orders/${id}/pay`, { method: 'POST' })
+      if (payment?.provider === 'stripe' && payment.clientSecret) {
+        navigate(`/checkout/pay?order=${id}`, { state: { orderId: id, clientSecret: payment.clientSecret } })
+        return
+      }
       if (payment?.provider === 'stripe' && payment.url) {
         window.location.assign(payment.url)
         return
@@ -153,7 +158,7 @@ function OrderPage({ id }) {
           </section>
         </div>
 
-        <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start">
+        <aside className="space-y-6 lg:sticky lg:top-36 lg:self-start">
           <section className="bg-surface p-6 ring-1 ring-line sm:p-8" aria-labelledby="summary-title">
             <h2 id="summary-title" className="font-display text-2xl">Summary</h2>
             <div className="mt-6"><OrderTotals order={order} /></div>

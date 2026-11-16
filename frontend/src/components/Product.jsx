@@ -1,11 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Alert } from '@mui/material'
 import SearchOffRoundedIcon from '@mui/icons-material/SearchOffRounded'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchproduct } from '../toolkit/productSlice'
+import { PRODUCT_PAGE_SIZE } from '../../../shared/catalog.js'
+import useDebouncedValue from '../hooks/useDebouncedValue'
+import { useProductList, useProductSummary } from '../hooks/useProducts'
+import useQueryParams from '../hooks/useQueryParams'
 import { setCategory, setSearchQuery } from '../toolkit/searchSlice'
-import { featuredRank, formatCategory, FREE_SHIPPING_TEXT } from '../utils/format'
+import { formatCategory, FREE_SHIPPING_TEXT } from '../utils/format'
 import EmptyState from './EmptyState'
+import Pagination from './Pagination'
 import ProductCard, { ProductCardSkeleton } from './ProductCard'
 import SectionHeading from './SectionHeading'
 import usePageMeta from '../hooks/usePageMeta'
@@ -18,42 +22,60 @@ const SORT_OPTIONS = [
   { value: 'discount', label: 'Biggest savings' },
 ]
 
-const SORTERS = {
-  featured: (a, b) => featuredRank(a) - featuredRank(b) || b.rating - a.rating,
-  'price-asc': (a, b) => a.price - b.price,
-  'price-desc': (a, b) => b.price - a.price,
-  rating: (a, b) => b.rating - a.rating,
-  discount: (a, b) => b.discountPercentage - a.discountPercentage,
-}
-
-const PAGE_SIZE = 12
-
+// Search, category and sort are applied by the server; only one page of products is ever loaded.
+// The page and sort live in the URL (?page=2&sort=rating) so a reload or a shared link shows the same page.
 function Product() {
   usePageMeta({ title: 'Shop all pieces', description: `Browse jewellery, watches, fragrance, bags and objects for the home. ${FREE_SHIPPING_TEXT} and 30-day returns.` })
   const dispatch = useDispatch()
-  const { items: products, status, error } = useSelector((state) => state.products)
   const searchQuery = useSelector((state) => state.search.query)
   const activeCategory = useSelector((state) => state.search.category)
-  const [sort, setSort] = useState('featured')
+  const [params, setParams] = useQueryParams()
+  const sort = SORT_OPTIONS.some((option) => option.value === params.get('sort')) ? params.get('sort') : 'featured'
+  const urlPage = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1)
+  // The header search updates the query on every key press; the request waits until typing pauses.
+  const search = useDebouncedValue(searchQuery.trim(), 300)
 
-  const filterKey = `${searchQuery}|${activeCategory}|${sort}`
-  const [page, setPage] = useState({ key: filterKey, count: PAGE_SIZE })
-  const visibleCount = page.key === filterKey ? page.count : PAGE_SIZE
+  // A new search, category or sort starts again from page 1; a page number in a shared link is kept on load.
+  // Page 1 applies in the same render the filters change (derived state), so the old page number is never requested
+  // with the new filters; the URL is brought into line just after.
+  const filterKey = `${search}|${activeCategory}|${sort}`
+  const [seenFilterKey, setSeenFilterKey] = useState(filterKey)
+  const [backToFirst, setBackToFirst] = useState(false)
+  if (seenFilterKey !== filterKey) {
+    setSeenFilterKey(filterKey)
+    setBackToFirst(urlPage !== 1)
+  }
+  if (backToFirst && urlPage === 1) setBackToFirst(false)
+  const page = backToFirst ? 1 : urlPage
+  useEffect(() => {
+    if (backToFirst) setParams({ page: null })
+  }, [backToFirst, setParams])
 
-  const categories = useMemo(() => [...new Set(products.map((product) => product.category))].sort(), [products])
+  const { products, total, totalPages, loading, placeholder, error, refetch } = useProductList({
+    page,
+    pageSize: PRODUCT_PAGE_SIZE,
+    sort,
+    category: activeCategory,
+    search,
+  })
+  const { data: summary } = useProductSummary()
+  const categories = (summary?.categories ?? []).map((category) => category.name)
 
-  const filteredProducts = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim()
-    const matches = products.filter((product) => {
-      if (activeCategory && product.category !== activeCategory) return false
-      if (!query) return true
-      return [product.title, product.category, product.brand].filter(Boolean).join(' ').toLowerCase().includes(query)
-    })
-    return [...matches].sort(SORTERS[sort])
-  }, [products, searchQuery, activeCategory, sort])
+  // A page past the end (an old link, or products removed since) steps back to the last page.
+  useEffect(() => {
+    if (!loading && !error && page > totalPages) setParams({ page: totalPages > 1 ? totalPages : null })
+  }, [loading, error, page, totalPages, setParams])
 
-  const visibleProducts = filteredProducts.slice(0, visibleCount)
-  const loading = status === 'idle' || status === 'loading'
+  const gridRef = useRef(null)
+  const goToPage = (next) => {
+    setParams({ page: next > 1 ? next : null })
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    gridRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+  }
+
+  // Skeletons only on the very first load; changing page keeps the previous page dimmed until the next arrives.
+  const initialLoading = loading && products.length === 0
+  const firstShown = (Math.min(page, totalPages) - 1) * PRODUCT_PAGE_SIZE + 1
 
   const chipClass = (active) =>
     `shrink-0 rounded-full border px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors ${
@@ -66,21 +88,21 @@ function Product() {
   }
 
   return (
-    <section id="shop" className="scroll-mt-24 py-14 md:py-20 lg:py-28" aria-labelledby="shop-title">
+    <section id="shop" className="scroll-mt-36 py-14 md:py-20 lg:py-28" aria-labelledby="shop-title">
       <div className="container-x">
         <SectionHeading
           id="shop-title"
           title="Shop all pieces"
           action={
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <p className="text-sm text-stone" aria-live="polite">
-                {loading ? 'Loading…' : `${filteredProducts.length} pieces`}
+                {initialLoading ? 'Loading…' : `${total} ${total === 1 ? 'piece' : 'pieces'}`}
               </p>
               <label htmlFor="sort" className="sr-only">Sort products</label>
               <select
                 id="sort"
                 value={sort}
-                onChange={(event) => setSort(event.target.value)}
+                onChange={(event) => setParams({ sort: event.target.value === 'featured' ? null : event.target.value })}
                 className="h-11 cursor-pointer border border-line bg-surface px-4 pr-8 text-sm outline-none focus:border-ink"
               >
                 {SORT_OPTIONS.map((option) => (
@@ -128,7 +150,7 @@ function Product() {
 
         {searchQuery && (
           <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
-            <span className="text-stone">
+            <span className="min-w-0 break-words text-stone">
               Results for <strong className="text-ink">“{searchQuery}”</strong>
             </span>
             <button type="button" onClick={() => dispatch(setSearchQuery(''))} className="text-[11px] font-semibold uppercase tracking-[0.16em] underline underline-offset-4 hover:text-gold">
@@ -137,12 +159,12 @@ function Product() {
           </div>
         )}
 
-        {status === 'failed' && (
+        {error && (
           <Alert
             severity="error"
             className="mt-10"
             action={
-              <button type="button" onClick={() => dispatch(fetchproduct())} className="px-3 text-sm font-semibold underline">
+              <button type="button" onClick={refetch} className="px-3 text-sm font-semibold underline">
                 Retry
               </button>
             }
@@ -151,13 +173,13 @@ function Product() {
           </Alert>
         )}
 
-        {status === 'succeeded' && filteredProducts.length === 0 && (
+        {!loading && !error && total === 0 && (
           <div className="mt-12 bg-surface ring-1 ring-line">
             <EmptyState
               compact
               icon={SearchOffRoundedIcon}
               title="Nothing found"
-              description={`No pieces match${searchQuery ? ` “${searchQuery}”` : ''}${activeCategory ? ` in ${formatCategory(activeCategory)}` : ''}.`}
+              description={`No pieces match${search ? ` “${search}”` : ''}${activeCategory ? ` in ${formatCategory(activeCategory)}` : ''}.`}
               action={
                 <button type="button" onClick={clearFilters} className="btn-outline">
                   Clear all filters
@@ -167,23 +189,22 @@ function Product() {
           </div>
         )}
 
-        <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-5 md:grid-cols-3 xl:grid-cols-4">
-          {loading
+        <div
+          ref={gridRef}
+          className={`mt-10 grid scroll-mt-36 grid-cols-2 gap-x-4 gap-y-12 transition-opacity sm:gap-x-5 md:grid-cols-3 xl:grid-cols-4 ${placeholder ? 'opacity-50' : ''}`}
+          aria-busy={loading}
+        >
+          {initialLoading
             ? Array.from({ length: 8 }, (_, index) => <ProductCardSkeleton key={index} />)
-            : visibleProducts.map((product, index) => <ProductCard key={product.id} product={product} index={index} />)}
+            : products.map((product, index) => <ProductCard key={product.id} product={product} index={index} />)}
         </div>
 
-        {visibleCount < filteredProducts.length && (
+        {!initialLoading && total > 0 && (
           <div className="mt-16 flex flex-col items-center gap-5">
-            <p className="text-sm text-stone">
-              Showing {visibleProducts.length} of {filteredProducts.length}
+            <p className="text-sm text-stone" aria-live="polite">
+              Showing {firstShown}–{Math.min(firstShown + PRODUCT_PAGE_SIZE - 1, total)} of {total}
             </p>
-            <div className="h-px w-48 bg-line">
-              <div className="h-px bg-ink" style={{ width: `${(visibleProducts.length / filteredProducts.length) * 100}%` }} />
-            </div>
-            <button type="button" onClick={() => setPage({ key: filterKey, count: visibleCount + PAGE_SIZE })} className="btn-outline">
-              Load more
-            </button>
+            <Pagination page={Math.min(page, totalPages)} totalPages={totalPages} onChange={goToPage} label="Shop pages" />
           </div>
         )}
       </div>

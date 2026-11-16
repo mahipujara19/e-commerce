@@ -38,4 +38,15 @@ const productSchema = new mongoose.Schema(
   { timestamps: true, toJSON: jsonOptions() },
 )
 
+// One index per list sort (see SORTS in productController.js), each ending on _id like the sort does, so a page is
+// read in index order instead of sorting the collection. The category ones serve the shop's filtered views.
+productSchema.index({ createdAt: 1, _id: 1 })
+productSchema.index({ price: 1, _id: 1 })
+productSchema.index({ rating: -1, _id: 1 })
+productSchema.index({ discountPercentage: -1, _id: 1 })
+productSchema.index({ name: 1, _id: 1 })
+productSchema.index({ stock: 1, _id: 1 })
+productSchema.index({ category: 1, rating: -1, _id: 1 })
+productSchema.index({ category: 1, price: 1, _id: 1 })
+
 export default mongoose.model('Product', productSchema)

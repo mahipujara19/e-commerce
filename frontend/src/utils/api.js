@@ -60,10 +60,13 @@ export const messageForStatus = (status) =>
   FALLBACK_MESSAGES[status] ??
   (status >= 500 ? 'Our servers are having trouble right now. Please try again in a moment.' : 'Something went wrong. Please try again.')
 
-const request = async (path, { method = 'GET', body, headers: extra } = {}) => {
+// options.signal (optional) lets the caller cancel, e.g. a search suggestion that a newer keystroke replaced.
+// A cancelled request rejects with code 'ABORTED', which callers ignore.
+const request = async (path, { method = 'GET', body, headers: extra, signal } = {}) => {
   const headers = { ...extra }
   if (body) headers['Content-Type'] = 'application/json'
 
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS)
   let response
   try {
     response = await fetch(`${API_BASE}${path}`, {
@@ -71,9 +74,11 @@ const request = async (path, { method = 'GET', body, headers: extra } = {}) => {
       headers,
       credentials: 'include',
       body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      // AbortSignal.any is missing before Safari 17.4; there the caller's signal is used alone.
+      signal: signal ? (AbortSignal.any ? AbortSignal.any([signal, timeout]) : signal) : timeout,
     })
   } catch (error) {
+    if (signal?.aborted) throw new ApiRequestError(0, 'Request cancelled', 'ABORTED')
     if (error?.name === 'TimeoutError') {
       throw new ApiRequestError(0, 'The server took too long to respond. Please check your connection and try again.', 'TIMEOUT')
     }

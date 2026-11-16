@@ -7,7 +7,6 @@ import StorefrontLayout from './components/StorefrontLayout.jsx'
 import Toaster from './components/Toaster.jsx'
 import { CookieConsent, OfflineBanner, RouteTracker } from './components/SiteNotices.jsx'
 import { ADMIN_SECTIONS } from './components/admin/adminSections.js'
-import { fetchproduct } from './toolkit/productSlice'
 import { restoreSession } from './toolkit/authSlice'
 import { fetchWishlist } from './toolkit/wishlistSlice'
 import { isStaff, STAFF_ROLES } from './utils/roles'
@@ -28,6 +27,7 @@ const ForgotPassword = lazy(() => import('./components/ForgotPassword.jsx'))
 const ResetPassword = lazy(() => import('./components/ResetPassword.jsx'))
 const VerifyEmail = lazy(() => import('./components/VerifyEmail.jsx'))
 const CheckoutComplete = lazy(() => import('./components/CheckoutComplete.jsx'))
+const CheckoutPayment = lazy(() => import('./components/CheckoutPayment.jsx'))
 const OrderPage = lazy(() => import('./components/OrderPage.jsx'))
 const PolicyPage = lazy(() => import('./components/PolicyPage.jsx'))
 const FaqPage = lazy(() => import('./components/FaqPage.jsx'))
@@ -57,8 +57,8 @@ function App() {
   const userId = useSelector((state) => state.auth.user?.id)
   const staff = useSelector((state) => isStaff(state.auth.user))
 
+  // Products are not preloaded: each screen fetches the page it shows (hooks/useProducts.js).
   useEffect(() => {
-    dispatch(fetchproduct())
     dispatch(restoreSession())
   }, [dispatch])
 
@@ -84,6 +84,7 @@ function App() {
             <Route path="/signup" element={<SignupForm />} />
             <Route path="/login" element={<LoginForm />} />
             <Route path="/checkout" element={<CheckoutForm />} />
+            <Route path="/checkout/pay" element={<RequireAuth><CheckoutPayment /></RequireAuth>} />
             <Route path="/checkout/complete" element={<RequireAuth><CheckoutComplete /></RequireAuth>} />
             <Route path="/about" element={<About />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

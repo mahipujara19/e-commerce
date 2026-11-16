@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Badge, Divider, Drawer, IconButton, Menu, MenuItem } from '@mui/material'
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded'
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
@@ -10,7 +9,7 @@ import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
 import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { setSearchQuery } from '../toolkit/searchSlice'
+import HeaderSearch from './HeaderSearch'
 import { logout } from '../toolkit/authSlice'
 import { openCart, toggleTheme } from '../toolkit/uiSlice'
 import { FREE_SHIPPING_MINIMUM, moneyShort } from '../utils/format'
@@ -36,7 +35,6 @@ function Header() {
   const itemCount = useSelector((state) =>
     state.cart.items.reduce((total, item) => total + (item.quantity ?? 1), 0),
   )
-  const searchQuery = useSelector((state) => state.search.query)
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
   const user = useSelector((state) => state.auth.user)
   const theme = useSelector((state) => state.ui.theme)
@@ -53,14 +51,7 @@ function Header() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
-  const [searchOpen, setSearchOpen] = useState(false)
   const [accountAnchor, setAccountAnchor] = useState(null)
-
-  const handleSearchSubmit = (event) => {
-    event.preventDefault()
-    setSearchOpen(false)
-    navigate('/shop')
-  }
 
   const handleAccountNavigate = (to) => {
     setAccountAnchor(null)
@@ -78,14 +69,11 @@ function Header() {
 
   return (
     <>
-      <div className="relative bg-night px-4 py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.22em] text-cream/90 sm:text-[11px]">
-        <span className="pr-16 sm:pr-0">
-          Complimentary shipping over {moneyShort(FREE_SHIPPING_MINIMUM)}
-          <span className="hidden sm:inline">
-            <span className="mx-2 text-gold-light">✦</span> 30-day returns
-          </span>
+      <div className="bg-night px-4 py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.22em] text-cream/90 sm:text-[11px]">
+        Complimentary shipping over {moneyShort(FREE_SHIPPING_MINIMUM)}
+        <span className="hidden sm:inline">
+          <span className="mx-2 text-gold-light">✦</span> 30-day returns
         </span>
-        <CurrencySwitcher className="absolute right-3 top-1/2 -translate-y-1/2 sm:right-6" />
       </div>
 
       <header
@@ -93,32 +81,19 @@ function Header() {
           scrolled ? 'border-line/60 bg-ivory/80 shadow-[0_12px_40px_-24px_rgba(0,0,0,0.35)]' : 'border-line bg-ivory/90'
         }`}
       >
-        <div className="container-x grid h-[72px] grid-cols-[1fr_auto_1fr] items-center md:h-20">
-          <div className="flex items-center gap-9">
+        {/* Row 1: logo, the search bar (desktop), and the shopper's controls. */}
+        <div className="container-x flex h-16 items-center gap-3 md:h-[72px] lg:gap-8">
+          <div className="flex shrink-0 items-center gap-1">
             <IconButton className="lg:hidden" edge="start" onClick={() => setMenuOpen(true)} aria-label="Open menu">
               <MenuRoundedIcon />
             </IconButton>
-            <nav className="hidden items-center gap-9 lg:flex" aria-label="Main navigation">
-              <NavLink to="/" end className={({ isActive }) => navLinkClass(isActive)}>
-                Home
-              </NavLink>
-              <NavLink to="/shop" className={({ isActive }) => navLinkClass(isActive)}>
-                Shop
-              </NavLink>
-              <NavLink to="/about" className={({ isActive }) => navLinkClass(isActive)}>
-                About
-              </NavLink>
-              {!isAuthenticated && (
-                <NavLink to="/signup" className={({ isActive }) => navLinkClass(isActive)}>
-                  Sign up
-                </NavLink>
-              )}
-            </nav>
+            <Logo />
           </div>
 
-          <Logo />
+          <HeaderSearch className="hidden lg:flex" />
 
-          <div className="flex items-center justify-end gap-0 sm:gap-2">
+          <div className="ml-auto flex shrink-0 items-center justify-end gap-0 sm:gap-1">
+            <CurrencySwitcher compact />
             <IconButton
               className="hidden sm:inline-flex"
               onClick={() => dispatch(toggleTheme())}
@@ -126,9 +101,6 @@ function Header() {
               title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
             >
               {theme === 'dark' ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
-            </IconButton>
-            <IconButton onClick={() => setSearchOpen((value) => !value)} aria-label="Search products" aria-expanded={searchOpen}>
-              {searchOpen ? <CloseRoundedIcon /> : <SearchRoundedIcon />}
             </IconButton>
 
             {isAuthenticated ? (
@@ -191,33 +163,30 @@ function Header() {
           </div>
         </div>
 
-        {searchOpen && (
-          <div className="animate-fade-in border-t border-line bg-ivory">
-            <form onSubmit={handleSearchSubmit} className="container-x flex items-center gap-4 py-5" role="search">
-              <SearchRoundedIcon className="text-stone" />
-              <input
-                autoFocus
-                value={searchQuery}
-                onChange={(event) => dispatch(setSearchQuery(event.target.value))}
-                placeholder="Search watches, fragrances, jewellery…"
-                aria-label="Search products"
-                className="h-12 min-w-0 flex-1 bg-transparent font-display text-xl outline-none placeholder:text-stone/60 md:text-2xl"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => dispatch(setSearchQuery(''))}
-                  className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone hover:text-ink"
-                >
-                  Clear
-                </button>
-              )}
-              <button type="submit" className="btn-primary hidden sm:inline-flex">
-                Search
-              </button>
-            </form>
+        {/* Phones and tablets: the search bar gets its own full-width row. */}
+        <div className="container-x pb-3 lg:hidden">
+          <HeaderSearch />
+        </div>
+
+        {/* Desktop row 2: the main links, like a department bar under the search. */}
+        <nav className="hidden border-t border-line/70 lg:block" aria-label="Main navigation">
+          <div className="container-x flex h-11 items-center justify-center gap-10">
+            <NavLink to="/" end className={({ isActive }) => navLinkClass(isActive)}>
+              Home
+            </NavLink>
+            <NavLink to="/shop" className={({ isActive }) => navLinkClass(isActive)}>
+              Shop
+            </NavLink>
+            <NavLink to="/about" className={({ isActive }) => navLinkClass(isActive)}>
+              About
+            </NavLink>
+            {!isAuthenticated && (
+              <NavLink to="/signup" className={({ isActive }) => navLinkClass(isActive)}>
+                Sign up
+              </NavLink>
+            )}
           </div>
-        )}
+        </nav>
       </header>
 
       <Drawer

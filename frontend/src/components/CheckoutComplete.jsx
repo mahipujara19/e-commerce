@@ -5,7 +5,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import usePageMeta from '../hooks/usePageMeta'
 import { cancelMyOrder, fetchOrder } from '../toolkit/orderSlice'
-import { fetchproduct } from '../toolkit/productSlice'
+import { invalidateProducts } from '../toolkit/productSlice'
 import { clearItem } from '../toolkit/slice'
 import { trackEvent } from '../utils/analytics'
 import { CURRENCY, formatDate, orderNumber } from '../utils/format'
@@ -77,7 +77,7 @@ function CheckoutComplete() {
     if (!confirmed || handled.current) return
     handled.current = true
     dispatch(clearItem())
-    dispatch(fetchproduct({ force: true }))
+    dispatch(invalidateProducts())
     trackPurchaseOnce(order)
   }, [confirmed, order, dispatch])
 
