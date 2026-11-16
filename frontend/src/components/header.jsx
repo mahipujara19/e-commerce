@@ -12,7 +12,8 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import HeaderSearch from './HeaderSearch'
 import { logout } from '../toolkit/authSlice'
 import { openCart, toggleTheme } from '../toolkit/uiSlice'
-import { FREE_SHIPPING_MINIMUM, moneyShort } from '../utils/format'
+import useMoney from '../hooks/useMoney'
+import { FREE_SHIPPING_MINIMUM } from '../utils/format'
 import CurrencySwitcher from './CurrencySwitcher'
 
 const navLinkClass = (isActive) =>
@@ -39,6 +40,8 @@ function Header() {
   const user = useSelector((state) => state.auth.user)
   const theme = useSelector((state) => state.ui.theme)
   const wishlistCount = useSelector((state) => state.wishlist.ids.length)
+  // The free-shipping threshold in the shopper's selected currency.
+  const { formatWhole } = useMoney()
 
   const [menuOpen, setMenuOpen] = useState(false)
   // The bag icon bounces whenever its count changes after the page loads.
@@ -70,7 +73,7 @@ function Header() {
   return (
     <>
       <div className="bg-night px-4 py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.22em] text-cream/90 sm:text-[11px]">
-        Complimentary shipping over {moneyShort(FREE_SHIPPING_MINIMUM)}
+        Complimentary shipping over {formatWhole(FREE_SHIPPING_MINIMUM)}
         <span className="hidden sm:inline">
           <span className="mx-2 text-gold-light">✦</span> 30-day returns
         </span>
